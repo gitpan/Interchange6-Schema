@@ -22,4 +22,4 @@ requires:
   SQL::Translator: 0.11016
 resources:
   repository: https://github.com/interchange/interchange6-schema.git
-version: 0.001
+version: 0.002
