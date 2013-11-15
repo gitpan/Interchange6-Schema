@@ -1,0 +1,25 @@
+---
+abstract: 'Database Schema for Interchange 6'
+author:
+  - 'Stefan Hornburg (Racke) <racke@linuxia.de>'
+build_requires:
+  ExtUtils::MakeMaker: 0
+configure_requires:
+  ExtUtils::MakeMaker: 0
+dynamic_config: 1
+generated_by: 'ExtUtils::MakeMaker version 6.66, CPAN::Meta::Converter version 2.120921'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: Interchange6-Schema
+no_index:
+  directory:
+    - t
+    - inc
+requires:
+  DBIx::Class: 0
+  SQL::Translator: 0.11016
+resources:
+  repository: https://github.com/interchange/interchange6-schema.git
+version: 0.001
