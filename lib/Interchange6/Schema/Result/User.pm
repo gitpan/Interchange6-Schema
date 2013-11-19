@@ -15,6 +15,8 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
+__PACKAGE__->load_components(qw(EncodedColumn TimeStamp));
+
 =head1 TABLE: C<users>
 
 =cut
@@ -49,6 +51,10 @@ __PACKAGE__->table("users");
   default_value: (empty string)
   is_nullable: 0
   size: 255
+  encode_column: 1
+  encode_class: 'Digest'
+  encode_args: { algorithm => 'SHA-512', format => 'hex', salt_length => 10 }
+  encode_check_method: 'check_password'
 
 =head2 first_name
 
@@ -66,17 +72,19 @@ __PACKAGE__->table("users");
 
 =head2 last_login
 
-  data_type: 'timestamp'
-  is_nullable: 0
+  data_type: 'datetime'
+  is_nullable: 1
 
 =head2 created
 
-  data_type: 'timestamp'
+  data_type: 'datetime'
+  set_on_create: 1
   is_nullable: 0
 
 =head2 last_modified
 
-  data_type: 'timestamp'
+  data_type: 'datetime'
+  set_on_create: 1
   is_nullable: 0
 
 =head2 active
@@ -100,17 +108,26 @@ __PACKAGE__->add_columns(
   "email",
   { data_type => "varchar", default_value => "", is_nullable => 0, size => 255 },
   "password",
-  { data_type => "varchar", default_value => "", is_nullable => 0, size => 255 },
+  { 
+   data_type           => "varchar",
+   default_value       => "",
+   is_nullable         => 0,
+   size                => 255, 
+   encode_column       => 1,
+   encode_class        => 'Digest',
+   encode_args         => { algorithm => 'SHA-512', format => 'hex', salt_length => 10 },
+   encode_check_method => 'check_password',
+},
   "first_name",
   { data_type => "varchar", default_value => "", is_nullable => 0, size => 255 },
   "last_name",
   { data_type => "varchar", default_value => "", is_nullable => 0, size => 255 },
   "last_login",
-  { data_type => "timestamp", is_nullable => 0 },
+  { data_type => "datetime", is_nullable => 1 },
   "created",
-  { data_type => "timestamp", is_nullable => 0 },
+  { data_type => "datetime", set_on_create => 1, is_nullable => 0 },
   "last_modified",
-  { data_type => "timestamp", is_nullable => 0 },
+  { data_type => "datetime", set_on_create => 1, is_nullable => 0 },
   "active",
   { data_type => "boolean", default_value => \"true", is_nullable => 0 },
 );

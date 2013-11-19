@@ -3,7 +3,8 @@ abstract: 'Database Schema for Interchange 6'
 author:
   - 'Stefan Hornburg (Racke) <racke@linuxia.de>'
 build_requires:
-  ExtUtils::MakeMaker: 0
+  DBICx::TestDatabase: 0
+  Test::More: 0
 configure_requires:
   ExtUtils::MakeMaker: 0
 dynamic_config: 1
@@ -19,7 +20,10 @@ no_index:
     - inc
 requires:
   DBIx::Class: 0
+  DBIx::Class::EncodedColumn: 0
+  DBIx::Class::TimeStamp: 0
   SQL::Translator: 0.11016
 resources:
+  bugtracker: https://github.com/interchange/interchange6-schema/issues
   repository: https://github.com/interchange/interchange6-schema.git
-version: 0.002
+version: 0.003

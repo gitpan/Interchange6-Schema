@@ -12,8 +12,14 @@ WriteMakefile(
       : ()),
     PL_FILES            => {},
     EXE_FILES           => ['bin/interchange6-create-database'],
+    BUILD_REQUIRES => {
+                       'Test::More' => 0,
+                       'DBICx::TestDatabase' => 0,
+                      },
     PREREQ_PM => {
                   'DBIx::Class' => 0,
+                  'DBIx::Class::EncodedColumn' => 0,
+                  'DBIx::Class::TimeStamp' => 0,
                   'SQL::Translator' => 0.11016,
                  },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
@@ -21,6 +27,7 @@ WriteMakefile(
     META_MERGE        => {
         resources => {
             repository  => 'https://github.com/interchange/interchange6-schema.git',
+            bugtracker => 'https://github.com/interchange/interchange6-schema/issues',
         },
     },
 );
