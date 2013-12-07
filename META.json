@@ -36,6 +36,7 @@
             "DBIx::Class" : "0",
             "DBIx::Class::EncodedColumn" : "0",
             "DBIx::Class::TimeStamp" : "0",
+            "DBIx::Class::Tree" : "0",
             "SQL::Translator" : "0.11016"
          }
       }
@@ -49,5 +50,5 @@
          "url" : "https://github.com/interchange/interchange6-schema.git"
       }
    },
-   "version" : "0.004"
+   "version" : "0.005"
 }
