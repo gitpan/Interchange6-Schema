@@ -4,6 +4,7 @@ author:
   - 'Stefan Hornburg (Racke) <racke@linuxia.de>'
 build_requires:
   DBICx::TestDatabase: 0
+  Locale::Country: 0
   Test::More: 0
 configure_requires:
   ExtUtils::MakeMaker: 0
@@ -27,4 +28,4 @@ requires:
 resources:
   bugtracker: https://github.com/interchange/interchange6-schema/issues
   repository: https://github.com/interchange/interchange6-schema.git
-version: 0.006
+version: 0.007

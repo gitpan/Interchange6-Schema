@@ -23,6 +23,7 @@
       "build" : {
          "requires" : {
             "DBICx::TestDatabase" : "0",
+            "Locale::Country" : "0",
             "Test::More" : "0"
          }
       },
@@ -50,5 +51,5 @@
          "url" : "https://github.com/interchange/interchange6-schema.git"
       }
    },
-   "version" : "0.006"
+   "version" : "0.007"
 }
