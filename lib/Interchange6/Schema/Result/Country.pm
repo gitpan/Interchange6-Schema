@@ -13,6 +13,8 @@ Interchange6::Schema::Result::Country
 use strict;
 use warnings;
 
+use Locale::Country;
+
 use base 'DBIx::Class::Core';
 
 =head1 TABLE: C<countries>
@@ -107,6 +109,32 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("country_iso_code");
 
+=head1 METHODS
+
+=head2 populate_from_locale_country
+
+Populates the C<countries> table with the help of L<Locale::Country>.
+
+=cut
+
+sub populate_from_locale_country {
+    my ($self) = @_;
+    my %show_states = (us => 1,
+                       ca => 1);
+
+    my @countries;
+
+    for my $country_iso_code (all_country_codes(LOCALE_CODE_ALPHA_2)) {
+        push @countries, [$country_iso_code,
+                          code2country($country_iso_code),
+                          $show_states{$country_iso_code} || 0];
+    }
+
+    my $ret = $self->schema->populate(['country_iso_code', 'name', 'show_states'],
+                              @countries);
+
+    return $ret;
+}
 
 # Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-12-06 07:40:36
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4ycBkFKPUPXEOv3/IfNayw

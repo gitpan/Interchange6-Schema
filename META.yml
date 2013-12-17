@@ -24,8 +24,9 @@ requires:
   DBIx::Class::EncodedColumn: 0
   DBIx::Class::TimeStamp: 0
   DBIx::Class::Tree: 0
+  Locale::SubCountry: 0
   SQL::Translator: 0.11016
 resources:
   bugtracker: https://github.com/interchange/interchange6-schema/issues
   repository: https://github.com/interchange/interchange6-schema.git
-version: 0.007
+version: 0.008
