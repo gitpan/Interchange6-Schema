@@ -21,6 +21,52 @@ use base 'DBIx::Class::Core';
 
 __PACKAGE__->table("products");
 
+=head1 DESCRIPTION
+
+The products table contains three product types parent, child and single.
+
+=over
+
+=item *
+
+B<Parent Product> A parent product is a container product in which variations of parent product or "child products" are linked.
+
+=item *
+
+B<Child Product> A child product for example "Acme Pro 10lb Dumbbell" would include the canonical_sku of the parent item whose description might be something like "Acme Pro Dumbbell".  In general a child product would contain attributes while a parent product would not.
+
+=item *
+
+B<Single Product> A single product does not have child products and will become a parent product if a child product exists.
+
+=back
+
+B<sku:>
+
+B<name:>
+
+B<short_description:>
+
+B<description:>
+
+B<price:>
+
+B<uri:> Unique product uri.  Example "acme-pro-dumbbells"
+
+B<weight:>
+
+B<priority:> Display order priority.
+
+B<gtin:> EAN or UPC type data.
+
+B<canonical_sku:> If the product is a child of a parent product the parent product sku would be referenced here.
+
+B<active:> Default is true
+
+B<inventory_exempt:>
+
+=cut
+
 =head1 ACCESSORS
 
 =head2 sku
@@ -59,8 +105,7 @@ __PACKAGE__->table("products");
 =head2 uri
 
   data_type: 'varchar'
-  default_value: (empty string)
-  is_nullable: 0
+  is_nullable: 1
   size: 255
 
 =head2 weight
@@ -68,6 +113,7 @@ __PACKAGE__->table("products");
   data_type: 'numeric'
   default_value: 0.0
   is_nullable: 0
+  size: [10,2]
 
 =head2 priority
 
@@ -78,8 +124,7 @@ __PACKAGE__->table("products");
 =head2 gtin
 
   data_type: 'varchar'
-  default_value: (empty string)
-  is_nullable: 0
+  is_nullable: 1
   size: 32
 
 =head2 canonical_sku
@@ -113,20 +158,15 @@ __PACKAGE__->add_columns(
   "description",
   { data_type => "text", default_value => "", is_nullable => 0 },
   "price",
-  {
-    data_type => "numeric",
-    default_value => "0.0",
-    is_nullable => 0,
-    size => [10, 2],
-  },
+  { data_type => "numeric", default_value => "0.0", is_nullable => 0, size => [10, 2] },
   "uri",
-  { data_type => "varchar", default_value => "", is_nullable => 0, size => 255 },
+  { data_type => "varchar", is_nullable => 1, size => 255 },
   "weight",
-  { data_type => "numeric", default_value => "0.0", is_nullable => 0 },
+  { data_type => "numeric", default_value => "0.0", is_nullable => 0, size => [10, 2] },
   "priority",
   { data_type => "integer", default_value => 0, is_nullable => 0 },
   "gtin",
-  { data_type => "varchar", default_value => "", is_nullable => 0, size => 32 },
+  { data_type => "varchar", is_nullable => 1, size => 32 },
   "canonical_sku",
   { data_type => "varchar", default_value => "", is_nullable => 0, size => 32 },
   "active",
@@ -173,6 +213,32 @@ sub path {
 =cut
 
 __PACKAGE__->set_primary_key("sku");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<products_gtin>
+
+=over 4
+
+=item * L</gtin>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("products_gtin", ["gtin"]);
+
+=head2 C<products_uri>
+
+=over 4
+
+=item * L</uri>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("products_uri", ["uri"]);
 
 =head1 RELATIONS
 

@@ -15,6 +15,8 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
+__PACKAGE__->load_components(qw(TimeStamp));
+
 =head1 TABLE: C<addresses>
 
 =cut
@@ -105,14 +107,14 @@ __PACKAGE__->table("addresses");
   is_nullable: 0
   size: 32
 
-=head2 state_code
+=head2 state_iso_code
 
-  data_type: 'char'
+  data_type: 'varchar'
   default_value: (empty string)
   is_nullable: 0
   size: 6
 
-=head2 country_code
+=head2 country_iso_code
 
   data_type: 'char'
   default_value: (empty string)
@@ -121,12 +123,15 @@ __PACKAGE__->table("addresses");
 
 =head2 created
 
-  data_type: 'timestamp'
+  data_type: 'datetime'
+  set_on_create: 1
   is_nullable: 0
 
 =head2 last_modified
 
-  data_type: 'timestamp'
+  data_type: 'datetime'
+  set_on_create: 1
+  set_on_update: 1
   is_nullable: 0
 
 =cut
@@ -161,14 +166,14 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", default_value => "", is_nullable => 0, size => 255 },
   "phone",
   { data_type => "varchar", default_value => "", is_nullable => 0, size => 32 },
-  "state_code",
-  { data_type => "char", default_value => "", is_nullable => 0, size => 6 },
-  "country_code",
+  "state_iso_code",
+  { data_type => "varchar", default_value => "", is_nullable => 0, size => 6 },
+  "country_iso_code",
   { data_type => "char", default_value => "", is_nullable => 0, size => 2 },
   "created",
-  { data_type => "timestamp", is_nullable => 0 },
+  { data_type => "datetime", set_on_create => 1, is_nullable => 0 },
   "last_modified",
-  { data_type => "timestamp", is_nullable => 0 },
+  { data_type => "datetime", set_on_create => 1, set_on_update => 1, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY

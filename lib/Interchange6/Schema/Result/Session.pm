@@ -15,6 +15,8 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
+__PACKAGE__->load_components(qw(TimeStamp));
+
 =head1 TABLE: C<sessions>
 
 =cut
@@ -34,21 +36,18 @@ __PACKAGE__->table("sessions");
   data_type: 'text'
   is_nullable: 0
 
-=head2 session_hash
-
-  data_type: 'text'
-  is_nullable: 0
-
 =head2 created
 
-  data_type: 'timestamp'
+  data_type: 'datetime'
+  set_on_create: 1
   is_nullable: 0
 
 =head2 last_modified
 
-  data_type: 'timestamp'
+  data_type: 'datetime'
+  set_on_create: 1
+  set_on_update: 1
   is_nullable: 0
-  original: {default_value => \"now()"}
 
 =cut
 
@@ -57,16 +56,10 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 0, size => 255 },
   "session_data",
   { data_type => "text", is_nullable => 0 },
-  "session_hash",
-  { data_type => "text", is_nullable => 0 },
   "created",
-  { data_type => "timestamp", is_nullable => 0 },
+  { data_type => "datetime", set_on_create => 1, is_nullable => 0 },
   "last_modified",
-  {
-    data_type     => "timestamp",
-    is_nullable   => 0,
-    original      => { default_value => \"now()" },
-  },
+  { data_type => "datetime", set_on_create => 1, set_on_update => 1, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY

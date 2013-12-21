@@ -7,7 +7,7 @@ Interchange6::Schema - Database Schema for Interchange 6
 
 =head1 VERSION
 
-0.008
+0.009
 
 =head1 DESCRIPTION
 
@@ -175,7 +175,7 @@ See http://dev.perl.org/licenses/ for more information.
 
 =cut
 
-our $VERSION = '0.008';
+our $VERSION = '0.009';
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
@@ -186,27 +186,6 @@ use warnings;
 use base 'DBIx::Class::Schema';
 
 __PACKAGE__->load_namespaces;
-
-use Locale::Country;
-
-sub populate_from_locale_country {
-    my ($self) = @_;
-    my %show_states = (us => 1,
-                       ca => 1);
-
-    my @countries;
-
-    for my $country_iso_code (all_country_codes(LOCALE_CODE_ALPHA_2)) {
-        push @countries, [$country_iso_code,
-                          code2country($country_iso_code),
-                          $show_states{$country_iso_code} || 0];
-    }
-    my $ret = $self->resultset('Country')->populate(
-                              [['country_iso_code', 'name', 'show_states'],
-                              @countries]);
-
-    return $ret;
-}
 
 # Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-11-08 09:31:06
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:A+AhSjuWjRp6Y39vdVcJxg

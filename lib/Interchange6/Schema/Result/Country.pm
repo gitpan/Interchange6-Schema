@@ -13,8 +13,6 @@ Interchange6::Schema::Result::Country
 use strict;
 use warnings;
 
-use Locale::Country;
-
 use base 'DBIx::Class::Core';
 
 =head1 TABLE: C<countries>
@@ -27,7 +25,7 @@ __PACKAGE__->table("countries");
 
 ISO 3166-1 codes for country identification
 
-B<country_iso_code:> Two letter country code such as 'si' = Slovenia.
+B<country_iso_code:> Two letter country code such as 'SI' = Slovenia.
 
 B<scope:> Internal sorting field.
 
@@ -43,7 +41,7 @@ B<active:>  Active shipping destination?  Default is false.
 
 =head2 country_iso_code
 
-  data_type: 'varchar'
+  data_type: 'char'
   default_value: (empty string)
   is_nullable: 0
   size: 2
@@ -84,7 +82,7 @@ B<active:>  Active shipping destination?  Default is false.
 
 __PACKAGE__->add_columns(
   "country_iso_code",
-  { data_type => "varchar", default_value => "", is_nullable => 0, size => 2 },
+  { data_type => "char", default_value => "", is_nullable => 0, size => 2 },
   "scope",
   { data_type => "varchar", default_value => "", is_nullable => 0, size => 32 },
   "name",
@@ -109,32 +107,6 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("country_iso_code");
 
-=head1 METHODS
-
-=head2 populate_from_locale_country
-
-Populates the C<countries> table with the help of L<Locale::Country>.
-
-=cut
-
-sub populate_from_locale_country {
-    my ($self) = @_;
-    my %show_states = (us => 1,
-                       ca => 1);
-
-    my @countries;
-
-    for my $country_iso_code (all_country_codes(LOCALE_CODE_ALPHA_2)) {
-        push @countries, [$country_iso_code,
-                          code2country($country_iso_code),
-                          $show_states{$country_iso_code} || 0];
-    }
-
-    my $ret = $self->schema->populate(['country_iso_code', 'name', 'show_states'],
-                              @countries);
-
-    return $ret;
-}
 
 # Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-12-06 07:40:36
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4ycBkFKPUPXEOv3/IfNayw
