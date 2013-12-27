@@ -19,7 +19,7 @@ use base 'DBIx::Class::Core';
 
 =cut
 
-__PACKAGE__->load_components(qw(Tree::AdjacencyList));
+__PACKAGE__->load_components(qw(Tree::AdjacencyList TimeStamp));
 
 __PACKAGE__->table("navigation");
 
@@ -96,18 +96,24 @@ __PACKAGE__->table("navigation");
   default_value: 0
   is_nullable: 0
 
+=head2 created
+
+  data_type: 'datetime'
+  set_on_create: 1
+  is_nullable: 0
+
+=head2 last_modified
+
+  data_type: 'datetime'
+  set_on_create: 1
+  set_on_update: 1
+  is_nullable: 0
+
 =head2 active
 
   data_type: 'boolean'
   default_value: true
   is_nullable: 0
-
-=head2 entered
-
-  data_type: 'timestamp'
-  default_value: current_timestamp
-  is_nullable: 1
-  original: {default_value => \"now()"}
 
 =cut
 
@@ -139,15 +145,12 @@ __PACKAGE__->add_columns(
   { data_type => "integer", default_value => 0, is_nullable => 0 },
   "product_count",
   { data_type => "integer", default_value => 0, is_nullable => 0 },
+  "created",
+  { data_type => "datetime", set_on_create => 1, is_nullable => 0 },
+  "last_modified",
+  { data_type => "datetime", set_on_create => 1, set_on_update => 1, is_nullable => 0 },
   "active",
   { data_type => "boolean", default_value => \"true", is_nullable => 0 },
-  "entered",
-  {
-    data_type     => "timestamp",
-    default_value => \"current_timestamp",
-    is_nullable   => 1,
-    original      => { default_value => \"now()" },
-  },
 );
 
 =head1 PRIMARY KEY
@@ -182,7 +185,7 @@ __PACKAGE__->parent_column('parent_id');
 
 =head1 RELATIONS
 
-=head2 navigation_products
+=head2 NavigationProduct
 
 Type: has_many
 
@@ -191,7 +194,7 @@ Related object: L<Interchange6::Schema::Result::NavigationProduct>
 =cut
 
 __PACKAGE__->has_many(
-  "navigation_products",
+  "NavigationProduct",
   "Interchange6::Schema::Result::NavigationProduct",
   { "foreign.navigation_id" => "self.navigation_id" },
   { cascade_copy => 0, cascade_delete => 0 },

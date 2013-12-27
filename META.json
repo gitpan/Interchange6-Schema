@@ -4,7 +4,7 @@
       "Stefan Hornburg (Racke) <racke@linuxia.de>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "ExtUtils::MakeMaker version 6.66, CPAN::Meta::Converter version 2.120921",
+   "generated_by" : "ExtUtils::MakeMaker version 6.66, CPAN::Meta::Converter version 2.133380",
    "license" : [
       "perl_5"
    ],
@@ -24,7 +24,8 @@
          "requires" : {
             "DBICx::TestDatabase" : "0",
             "Locale::Country" : "0",
-            "Test::More" : "0"
+            "Test::More" : "0",
+            "Try::Tiny" : "0"
          }
       },
       "configure" : {
@@ -52,5 +53,5 @@
          "url" : "https://github.com/interchange/interchange6-schema.git"
       }
    },
-   "version" : "0.009"
+   "version" : "0.010"
 }
