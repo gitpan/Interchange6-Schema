@@ -7,7 +7,7 @@ Interchange6::Schema - Database Schema for Interchange 6
 
 =head1 VERSION
 
-0.010
+0.011
 
 =head1 DESCRIPTION
 
@@ -31,6 +31,14 @@ L<Interchange6::Schema::Populate::CountryLocale>
 
 L<Interchange6::Schema::Populate::StateLocale>
 
+=head2 Attribute
+
+L<Interchange6::Schema::Result::Attribute>
+
+=head2 AttributeValue
+
+L<Interchange6::Schema::Result::AttributeValue>
+
 =head2 Product
 
 L<Interchange6::Schema::Result::Product>
@@ -39,9 +47,9 @@ L<Interchange6::Schema::Result::Product>
 
 L<Interchange6::Schema::Result::ProductAttribute>
 
-=head2 ProductAttributes
+=head2 ProductAttributeValue
 
-L<Interchange6::Schema::Result::ProductAttributes>
+L<Interchange6::Schema::Result::ProductAttributeValue>
 
 =head2 GroupPricing
 
@@ -175,7 +183,7 @@ See http://dev.perl.org/licenses/ for more information.
 
 =cut
 
-our $VERSION = '0.010';
+our $VERSION = '0.011';
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
