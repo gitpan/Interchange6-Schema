@@ -26,6 +26,8 @@ WriteMakefile(
                   'SQL::Translator' => 0.11016,
                   # for populating country/state records
                   'Locale::SubCountry' => 0,
+                  'DateTime' => 0,
+                  'Time::Duration::Parse' => 0,
                  },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'Interchange6-Schema-*' },

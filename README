@@ -2,7 +2,7 @@ NAME
     Interchange6::Schema - Database Schema for Interchange 6
 
 VERSION
-    0.011
+    0.012
 
 DESCRIPTION
     Database schema classes for Interchange6 Open Source eCommerce software.
@@ -115,6 +115,9 @@ SCHEMA CLASSES
 
   Setting
     Interchange6::Schema::Result::Setting
+
+  Session
+    Interchange6::Schema::ResultSet::Session
 
 AUTHORS
     Stefan Hornburg (Racke), `racke@linuxia.de'

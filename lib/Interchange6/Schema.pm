@@ -7,7 +7,7 @@ Interchange6::Schema - Database Schema for Interchange 6
 
 =head1 VERSION
 
-0.011
+0.012
 
 =head1 DESCRIPTION
 
@@ -159,6 +159,10 @@ L<Interchange6::Schema::Result::Session>
 
 L<Interchange6::Schema::Result::Setting>
 
+=head2 Session
+
+L<Interchange6::Schema::ResultSet::Session>
+
 =head1 AUTHORS
 
 Stefan Hornburg (Racke), C<racke@linuxia.de>
@@ -183,7 +187,7 @@ See http://dev.perl.org/licenses/ for more information.
 
 =cut
 
-our $VERSION = '0.011';
+our $VERSION = '0.012';
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
