@@ -130,8 +130,7 @@ B<inventory_exempt:>
 =head2 canonical_sku
 
   data_type: 'varchar'
-  default_value: (empty string)
-  is_nullable: 0
+  is_nullable: 1
   size: 32
 
 =head2 active
@@ -168,7 +167,7 @@ __PACKAGE__->add_columns(
   "gtin",
   { data_type => "varchar", is_nullable => 1, size => 32 },
   "canonical_sku",
-  { data_type => "varchar", default_value => "", is_nullable => 0, size => 32 },
+  { data_type => "varchar", is_nullable => 1, size => 32 },
   "active",
   { data_type => "boolean", default_value => \"true", is_nullable => 0 },
   "inventory_exempt",
@@ -202,42 +201,252 @@ sub path {
     return wantarray ? @path : \@path;
 }
 
-=head2 attribute_iterator
+=head2 find_variant \%input [\%match_info]
 
-Returns nested iterator for product attributes.
+Find product variant with the given attribute values
+in $input.
+
+Returns variant in case of success.
+
+Returns undef in case of failure.
+
+You can pass an optional hash reference \%match_info
+which is filled with attribute matches (only valid
+in case of failure).
 
 =cut
 
-sub attribute_iterator {
-    my ($self) = @_;
+sub find_variant {
+    my ($self, $input, $match_info) = @_;
 
-    my $prod_att_rs = $self->search_related('ProductAttribute',
+    if (my $canonical = $self->canonical) {
+        return $canonical->find_variant($input, $match_info);
+    }
+
+    my $gather_matches;
+
+    if (ref($match_info) eq 'HASH') {
+        $gather_matches = 1;
+    }
+
+    # get all variants
+    my $all_variants = $self->search_related('Variant');
+    my $variant;
+
+    while ($variant = $all_variants->next) {
+        my $sku;
+
+        if ($gather_matches) {
+            $sku = $variant->sku;
+        }
+
+        my $variant_attributes = $variant->search_related('ProductAttribute',
                                          {},
                                          {join => 'Attribute',
                                           prefetch => 'Attribute',
                                          },
                                         );
 
-    my @attributes;
+        my %match;
+
+        while (my $prod_att = $variant_attributes->next) {
+            my $name = $prod_att->Attribute->name;
+
+            my $pav_rs = $prod_att->search_related('ProductAttributeValue',{}, {join => 'AttributeValue', prefetch => 'AttributeValue'});
+
+            if ($pav_rs->count != 1 ||
+                    $pav_rs->next->AttributeValue->value ne $input->{$name}) {
+                if ($gather_matches) {
+                    $match_info->{$sku}->{$name} = 0;
+                    next;
+                }
+                else {
+                    last;
+                }
+            }
+
+            if ($gather_matches) {
+                $match_info->{$sku}->{$name} = 1;
+            }
+
+            $match{$name} = 1;
+        }
+
+        if (scalar(keys %$input) == scalar(keys %match)) {
+            return $variant;
+        }
+    }
+
+    return;
+};
+
+=head2 attribute_iterator
+
+Returns nested iterator for product attributes.
+
+For canonical products, it shows all the attributes
+of the child products.
+
+For a child product, it shows all the attributes
+of the siblings.
+
+=cut
+
+sub attribute_iterator {
+    my ($self, %args) = @_;
+    my ($canonical);
+
+    if ($canonical = $self->canonical) {
+        # get canonical object
+        $args{selected} = $self->sku;
+        return $canonical->attribute_iterator(%args);
+    }
+
+    # search for variants
+    my $prod_att_rs = $self->search_related('Variant')->search_related('ProductAttribute',
+                                         {},
+                                         {join => 'Attribute',
+                                          prefetch => 'Attribute',
+                                          order_by => 'Attribute.priority',
+                                         },
+                                        );
+
+    my %attributes;
 
     while (my $prod_att = $prod_att_rs->next) {
-        my $pav_rs = $prod_att->search_related('ProductAttributeValue',{}, {join => 'AttributeValue', prefetch => 'AttributeValue'});
+        my $name = $prod_att->Attribute->name;
+
+        unless (exists $attributes{$name}) {
+            $attributes{$name} = {name => $name,
+                                  title => $prod_att->Attribute->title,
+                                  priority => $prod_att->Attribute->priority,
+                                  value_map => {},
+                                  attribute_values => [],
+                              }
+        }
+
+        my $att_record = $attributes{$name};
+
+        my $pav_rs = $prod_att->search_related('ProductAttributeValue',
+                                               {},
+                                               {join => 'AttributeValue', prefetch => 'AttributeValue',                                           order_by => 'AttributeValue.priority desc',});
 
         my @values;
 
         while (my $prod_att_val = $pav_rs->next) {
-            push @values, {value => $prod_att_val->AttributeValue->value,
-                           title => $prod_att_val->AttributeValue->title,
-                          };
-        }
+            my %attr_value = (value => $prod_att_val->AttributeValue->value,
+                              title => $prod_att_val->AttributeValue->title,
+                              priority => $prod_att_val->AttributeValue->priority,
+                              selected => 0,
+                          );
 
-        push @attributes, {name => $prod_att->Attribute->name,
-                           title => $prod_att->Attribute->title,
-                           attribute_values => \@values,
-                          };
+            if (! exists $att_record->{value_map}->{$attr_value{value}}) {
+                $att_record->{value_map}->{$attr_value{value}} = \%attr_value;
+            }
+
+            # determined whether this is the current attribute
+            if ($args{selected} && $prod_att->sku eq $args{selected}) {
+                $att_record->{value_map}->{$attr_value{value}}->{selected} = 1;
+            }
+        }
     }
 
-    return \@attributes;
+    while (my($name, $record) = each %attributes) {
+        $record->{attribute_values} =
+            [sort {$b->{priority} <=> $a->{priority}} values %{delete $record->{value_map}}];
+    }
+
+    if ($args{hashref}) {
+        return \%attributes;
+    }
+
+    return [sort {$b->{priority} <=> $a->{priority}} values %attributes];
+}
+
+=head2 add_variants @variants
+
+Add variants from a list of hash references.
+
+Returns product object.
+
+Each hash reference contains attributes and column
+data which overrides data from the canonical product.
+
+The canonical sku of the variant is automatically set.
+
+Example for the hash reference (attributes in the first line):
+
+     {color => 'yellow', size => 'small',
+      sku => 'G0001-YELLOW-S',
+      name => 'Six Small Yellow Tulips',
+      uri => 'six-small-yellow-tulips'}
+
+=cut
+
+sub add_variants {
+    my ($self, @variants) = @_;
+    my %attr_map;
+    my $attr_rs = $self->result_source->schema->resultset('Attribute');
+
+    for my $var_ref (@variants) {
+        my %attr;
+        my %product;
+        my $sku;
+
+        unless (exists $var_ref->{sku} && ($sku = $var_ref->{sku})) {
+            die "SKU missing in input for add_variants.";
+        }
+
+        # weed out attribute values
+        while (my ($name, $value) = each %$var_ref) {
+            if ($self->result_source->has_column($name)) {
+                $product{$name} = $value;
+                next;
+            }
+
+            my ($attribute, $attribute_value);
+
+            if (! $attr_map{$name}) {
+                my $set = $attr_rs->search({name => $name,
+                                            type => 'variant',
+                                        });
+
+                if ($set->count > 1) {
+                    die "Ambigious variant attribute '$name' for SKU $sku";
+                }
+                elsif (! ($attribute = $set->next)) {
+                    die "Missing variant attribute '$name' for SKU $sku";
+                }
+
+                $attr_map{$name} = $attribute;
+            }
+
+            # search for attribute value
+            unless ($attribute_value = $attr_map{$name}->find_related('AttributeValue',
+                                                                {value => $value})) {
+                die "Missing variant attribute value '$value' for attribute '$name' and SKU $sku";
+            }
+
+            $attr{$name} = $attribute_value;
+        }
+
+        # clone with new values
+        $product{canonical_sku} = $self->sku;
+
+        $self->copy(\%product);
+
+        # find or create product attribute and product attribute value
+        while (my ($name, $value) = each %attr) {
+            my $product_attribute = $attr_map{$name}->find_or_create_related(
+                'ProductAttribute', {sku => $sku});
+
+            $product_attribute->create_related('ProductAttributeValue',
+                                               {attribute_values_id => $value->id}
+                                                   );
+        }
+    }
+
+    return $self;
 }
 
 =head1 PRIMARY KEY
@@ -279,6 +488,35 @@ __PACKAGE__->add_unique_constraint("products_gtin", ["gtin"]);
 __PACKAGE__->add_unique_constraint("products_uri", ["uri"]);
 
 =head1 RELATIONS
+
+=head2 canonical
+
+Type: belongs_to
+
+Related object: L<Interchange6::Schema::Result::Product>
+
+=cut
+
+__PACKAGE__->belongs_to(
+    "canonical",
+    "Interchange6::Schema::Result::Product",
+    {'foreign.sku' => 'self.canonical_sku'},
+);
+
+=head2 Variant
+
+Type: has_many
+
+Related object: L<Interchange6::Schema::Result::Product>
+
+=cut
+
+__PACKAGE__->has_many(
+  "Variant",
+  "Interchange6::Schema::Result::Product",
+  { "foreign.canonical_sku" => "self.sku" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 =head2 CartProduct
 

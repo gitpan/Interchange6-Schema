@@ -33,12 +33,36 @@ Attribute name, e.g. color or size.
   data_type: 'varchar'
   is_nullable: 0
 
+=head2 type
+
+Attribute type.
+
+  data_type: 'varchar'
+  default_value: (empty string)
+  is_nullable: 0
+
 =head2 title
 
 Displayed title for attribute name, e.g. Color or Size.
 
   data_type: 'varchar'
   default_value: (empty string)
+  is_nullable: 0
+
+=head2 dynamic
+
+Flag to designate the attribute as being dynamic.
+
+  data_type: 'boolean'
+  default_value: false
+  is_nullable: 0
+
+=head2 priority
+
+Display order priority.
+
+  data_type: 'integer'
+  default_value: 0
   is_nullable: 0
 
 =cut
@@ -52,8 +76,14 @@ __PACKAGE__->add_columns(
   },
   "name",
   { data_type => "varchar", is_nullable => 0},
+  "type",
+  { data_type => "text", default_value => "", is_nullable => 0 },
   "title",
   { data_type => "text", default_value => "", is_nullable => 0 },
+  "dynamic",
+  { data_type => "boolean", default_value => \"false", is_nullable => 0 },
+  "priority",
+  { data_type => "integer", default_value => 0, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -81,6 +111,21 @@ Related object: L<Interchange6::Schema::Result::AttributeValue>
 __PACKAGE__->has_many(
   "AttributeValue",
   "Interchange6::Schema::Result::AttributeValue",
+  { "foreign.attributes_id" => "self.attributes_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 ProductAttribute
+
+Type: has_many
+
+Related object: L<Interchange6::Schema::Result::ProductAttribute>
+
+=cut
+
+__PACKAGE__->has_many(
+  "ProductAttribute",
+  "Interchange6::Schema::Result::ProductAttribute",
   { "foreign.attributes_id" => "self.attributes_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );

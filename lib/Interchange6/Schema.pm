@@ -7,7 +7,7 @@ Interchange6::Schema - Database Schema for Interchange 6
 
 =head1 VERSION
 
-0.012
+0.013
 
 =head1 DESCRIPTION
 
@@ -115,6 +115,10 @@ L<Interchange6::Schema::Result::Permission>
 
 L<Interchange6::Schema::Result::UserAttribute>
 
+=head2 UserAttributeValue
+
+L<Interchange6::Schema::Result::UserAttributeValue>
+
 =head2 Address
 
 L<Interchange6::Schema::Result::Address>
@@ -174,10 +178,11 @@ Sam Batschelet C<sbatschelet@mac.com>
 =head1 CONTRIBUTORS
 
 Kaare Rasmussen
+SysPete
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2013 Stefan Hornburg (Racke), Jeff Boes.
+Copyright 2013-2014 Stefan Hornburg (Racke), Jeff Boes.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
@@ -187,7 +192,7 @@ See http://dev.perl.org/licenses/ for more information.
 
 =cut
 
-our $VERSION = '0.012';
+our $VERSION = '0.013';
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
