@@ -1,13 +1,15 @@
 use utf8;
 package Interchange6::Schema;
 
+=encoding utf8
+
 =head1 NAME
 
 Interchange6::Schema - Database Schema for Interchange 6
 
 =head1 VERSION
 
-0.016
+0.017
 
 =head1 DESCRIPTION
 
@@ -179,6 +181,7 @@ Sam Batschelet C<sbatschelet@mac.com>
 
 Kaare Rasmussen
 SysPete
+Šimun Kodžoman
 
 =head1 LICENSE AND COPYRIGHT
 
@@ -192,7 +195,7 @@ See http://dev.perl.org/licenses/ for more information.
 
 =cut
 
-our $VERSION = '0.016';
+our $VERSION = '0.017';
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
