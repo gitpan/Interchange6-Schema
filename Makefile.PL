@@ -14,6 +14,8 @@ WriteMakefile(
     EXE_FILES           => ['bin/interchange6-create-database'],
     BUILD_REQUIRES => {
                        'Test::More' => 0,
+                       'Test::Warnings' => 0,
+                       'DBD::SQLite' => 1.38_01,
                        'DBICx::TestDatabase' => 0,
                        'Locale::Country' => 0,
                        'Try::Tiny' => 0,
@@ -21,6 +23,7 @@ WriteMakefile(
     PREREQ_PM => {
                   'DBIx::Class' => 0,
                   'DBIx::Class::EncodedColumn' => 0,
+                  'DBIx::Class::InflateColumn::DateTime' => 0,
                   'DBIx::Class::TimeStamp' => 0,
                   'DBIx::Class::Tree' => 0,
                   'SQL::Translator' => 0.11016,

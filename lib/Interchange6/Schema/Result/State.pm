@@ -23,13 +23,11 @@ use base 'DBIx::Class::Core';
 
 ISO 3166-2 codes for sub_country identification "states"
 
-B<state_id:>
-
 B<scope:> Internal sorting field.
 
 B<country_iso_code:> Two letter country code such as 'SI' = Slovenia.
 
-B<state_iso_code:> Alpha state code such as 'NY' = New York.
+<state_iso_code:> Alpha state code such as 'NY' = New York.
 
 B<name:>  Full state name.
 
@@ -43,7 +41,7 @@ __PACKAGE__->table("states");
 
 =head1 ACCESSORS
 
-=head2 state_id
+=head2 states_id
 
   data_type: 'integer'
   is_auto_increment: 1
@@ -59,9 +57,8 @@ __PACKAGE__->table("states");
 =head2 country_iso_code
 
   data_type: 'char'
-  default_value: (empty string)
+  is_foreign_key: 1
   is_nullable: 0
-  size: 2
 
 =head2 state_iso_code
 
@@ -92,12 +89,12 @@ __PACKAGE__->table("states");
 =cut
 
 __PACKAGE__->add_columns(
-  "state_id",
+  "states_id",
   { data_type => "integer", is_auto_increment => 1, is_nullable => 0 },
   "scope",
   { data_type => "varchar", default_value => "", is_nullable => 0, size => 32 },
   "country_iso_code",
-  { data_type => "char", default_value => "", is_nullable => 0, size => 2 },
+  { data_type => "char", is_foreign_key => 1, is_nullable => 0 },
   "state_iso_code",
   { data_type => "varchar", default_value => "", is_nullable => 0, size => 6 },
   "name",
@@ -112,13 +109,13 @@ __PACKAGE__->add_columns(
 
 =over 4
 
-=item * L</state_id>
+=item * L</states_id>
 
 =back
 
 =cut
 
-__PACKAGE__->set_primary_key("state_id");
+__PACKAGE__->set_primary_key("states_id");
 
 =head1 RELATIONS
 

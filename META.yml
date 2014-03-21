@@ -3,33 +3,36 @@ abstract: 'Database Schema for Interchange 6'
 author:
   - 'Stefan Hornburg (Racke) <racke@linuxia.de>'
 build_requires:
-  DBICx::TestDatabase: 0
-  Locale::Country: 0
-  Test::More: 0
-  Try::Tiny: 0
+  DBD::SQLite: '1.3801'
+  DBICx::TestDatabase: '0'
+  Locale::Country: '0'
+  Test::More: '0'
+  Test::Warnings: '0'
+  Try::Tiny: '0'
 configure_requires:
-  ExtUtils::MakeMaker: 0
+  ExtUtils::MakeMaker: '0'
 dynamic_config: 1
-generated_by: 'ExtUtils::MakeMaker version 6.86, CPAN::Meta::Converter version 2.133380'
+generated_by: 'ExtUtils::MakeMaker version 6.88, CPAN::Meta::Converter version 2.133380'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
-  version: 1.4
+  version: '1.4'
 name: Interchange6-Schema
 no_index:
   directory:
     - t
     - inc
 requires:
-  DBIx::Class: 0
-  DBIx::Class::EncodedColumn: 0
-  DBIx::Class::TimeStamp: 0
-  DBIx::Class::Tree: 0
-  DateTime: 0
-  Locale::SubCountry: 0
-  SQL::Translator: 0.11016
-  Time::Duration::Parse: 0
+  DBIx::Class: '0'
+  DBIx::Class::EncodedColumn: '0'
+  DBIx::Class::InflateColumn::DateTime: '0'
+  DBIx::Class::TimeStamp: '0'
+  DBIx::Class::Tree: '0'
+  DateTime: '0'
+  Locale::SubCountry: '0'
+  SQL::Translator: '0.11016'
+  Time::Duration::Parse: '0'
 resources:
   bugtracker: https://github.com/interchange/interchange6-schema/issues
   repository: https://github.com/interchange/interchange6-schema.git
-version: 0.018
+version: '0.019'
