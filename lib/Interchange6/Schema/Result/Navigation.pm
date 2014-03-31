@@ -13,7 +13,7 @@ Interchange6::Schema::Result::Navigation
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+use base qw(DBIx::Class::Core Interchange6::Schema::Base::Attribute);
 
 =head1 TABLE: C<navigation>
 
@@ -22,6 +22,35 @@ use base 'DBIx::Class::Core';
 __PACKAGE__->load_components(qw(Tree::AdjacencyList InflateColumn::DateTime TimeStamp));
 
 __PACKAGE__->table("navigation");
+
+=head1 DESCRIPTION
+
+Navigation is where all navigation, category and static page details are stored.  In addition
+information such as page title can be linked to these records as attributes.
+
+=over 4
+
+=item B<Attribute>
+
+Common attribute names for a Navigation records include these examples.
+
+meta_title
+meta_description
+meta_keywords
+head_js
+head_css
+
+=back
+
+=cut
+
+=head1 SYNOPSIS
+
+NOTE: with items such as head_css which may contain more than one record you must set the priority of the record.
+This ensures each record has a unique value and also allows for proper ordering.
+
+    $nav->add_attribute({name => 'head_css', priority => '1'}, '/css/main.css');
+    $nav->add_attribute({name => 'head_css', priority => '2'}, '/css/fancymenu.css');
 
 =head1 ACCESSORS
 
@@ -65,13 +94,6 @@ __PACKAGE__->table("navigation");
   data_type: 'text'
   default_value: (empty string)
   is_nullable: 0
-
-=head2 template
-
-  data_type: 'varchar'
-  default_value: (empty string)
-  is_nullable: 0
-  size: 255
 
 =head2 alias
 
@@ -135,8 +157,6 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", default_value => "", is_nullable => 0, size => 255 },
   "description",
   { data_type => "text", default_value => "", is_nullable => 0 },
-  "template",
-  { data_type => "varchar", default_value => "", is_nullable => 0, size => 255 },
   "alias",
   { data_type => "integer", default_value => 0, is_nullable => 0 },
   "parent_id",
@@ -152,6 +172,10 @@ __PACKAGE__->add_columns(
   "active",
   { data_type => "boolean", default_value => \"true", is_nullable => 0 },
 );
+
+=head1 METHODS
+
+Attribute methods are provided by the L<Interchange6::Schema::Base::Attribute> class.
 
 =head1 PRIMARY KEY
 
@@ -196,6 +220,21 @@ Related object: L<Interchange6::Schema::Result::NavigationProduct>
 __PACKAGE__->has_many(
   "NavigationProduct",
   "Interchange6::Schema::Result::NavigationProduct",
+  { "foreign.navigation_id" => "self.navigation_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 NavigationAttribute
+
+Type: has_many
+
+Related object: L<Interchange6::Schema::Result::NavigationAttribute>
+
+=cut
+
+__PACKAGE__->has_many(
+  "NavigationAttribute",
+  "Interchange6::Schema::Result::NavigationAttribute",
   { "foreign.navigation_id" => "self.navigation_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
