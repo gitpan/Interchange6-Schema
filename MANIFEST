@@ -5,6 +5,7 @@ lib/Interchange6/Schema/Base/Attribute.pm
 lib/Interchange6/Schema/Component/Validation.pm
 lib/Interchange6/Schema/Populate/CountryLocale.pm
 lib/Interchange6/Schema/Populate/StateLocale.pm
+lib/Interchange6/Schema/Populate/Zone.pm
 lib/Interchange6/Schema/Result/Address.pm
 lib/Interchange6/Schema/Result/Attribute.pm
 lib/Interchange6/Schema/Result/AttributeValue.pm
@@ -35,6 +36,11 @@ lib/Interchange6/Schema/Result/Review.pm
 lib/Interchange6/Schema/Result/Role.pm
 lib/Interchange6/Schema/Result/Session.pm
 lib/Interchange6/Schema/Result/Setting.pm
+lib/Interchange6/Schema/Result/Shipment.pm
+lib/Interchange6/Schema/Result/ShipmentCarrier.pm
+lib/Interchange6/Schema/Result/ShipmentDestination.pm
+lib/Interchange6/Schema/Result/ShipmentRate.pm
+lib/Interchange6/Schema/Result/ShipmentMethod.pm
 lib/Interchange6/Schema/Result/State.pm
 lib/Interchange6/Schema/Result/Tax.pm
 lib/Interchange6/Schema/Result/User.pm
@@ -56,13 +62,18 @@ t/dbic_testdatabase.t
 t/expire.t
 t/inflatecolumn_datetime.t
 t/manifest.t
+t/media.t
+t/payments.t
 t/load.t
 t/pod.t
 t/pod-coverage.t
+t/shipment.t
 t/tax.t
+t/schema_sanity.t
 t/user_attributes.t
 t/user_roles.t
 t/variants.t
 t/zones.t
+t/etc/schema.pl
 META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)

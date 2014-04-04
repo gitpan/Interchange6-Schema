@@ -186,13 +186,21 @@ Attribute methods are provided by the L<Interchange6::Schema::Base::Attribute> c
 Produces navigation path for this product.
 Returns array reference in scalar context.
 
+Uses $type to select specific taxonomy from navigation if present.
+
 =cut
 
 sub path {
-    my ($self) = @_;
+    my ($self, $type) = @_;
+
+    my $options = {};
+
+    if (defined $type) {
+        $options = {"Navigation.type" => $type};
+    }
 
     # search navigation entries for this product
-    my $rs = $self->search_related('NavigationProduct')->search_related('Navigation');
+    my $rs = $self->search_related('NavigationProduct')->search_related('Navigation', $options);
 
     my @path;
 
@@ -533,7 +541,7 @@ Related object: L<Interchange6::Schema::Result::CartProduct>
 =cut
 
 __PACKAGE__->has_many(
-  "CartProducts",
+  "CartProduct",
   "Interchange6::Schema::Result::CartProduct",
   { "foreign.sku" => "self.sku" },
   { cascade_copy => 0, cascade_delete => 0 },
@@ -548,7 +556,7 @@ Related object: L<Interchange6::Schema::Result::GroupPricing>
 =cut
 
 __PACKAGE__->has_many(
-  "GroupPricings",
+  "GroupPricing",
   "Interchange6::Schema::Result::GroupPricing",
   { "foreign.sku" => "self.sku" },
   { cascade_copy => 0, cascade_delete => 0 },
@@ -593,7 +601,7 @@ Related object: L<Interchange6::Schema::Result::MediaProduct>
 =cut
 
 __PACKAGE__->has_many(
-  "MediaProducts",
+  "MediaProduct",
   "Interchange6::Schema::Result::MediaProduct",
   { "foreign.sku" => "self.sku" },
   { cascade_copy => 0, cascade_delete => 0 },
@@ -676,6 +684,37 @@ __PACKAGE__->has_many(
 
 # Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-11-08 09:38:12
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3/NTsOSzy7fqdEvwhVcdXQ
+
+=head2 media
+
+Type: many_to_many with Media
+
+=cut
+
+__PACKAGE__->many_to_many("media", "MediaProduct", "Media");
+
+=head2 media_by_type
+
+Return a Media resultset with the related media, filtered by type
+(e.g. video or image). On the results you can call
+C<display_uri("type")> to get the actual uri.
+
+=cut
+
+sub media_by_type {
+    my ($self, $typename) = @_;
+    my @media_out;
+    # track back the schema and search the media type id
+    my $type = $self->result_source->schema
+      ->resultset('MediaType')->find({ type => $typename });
+    return unless $type;
+    return $self->media->search({
+                                 media_types_id => $type->media_types_id,
+                                },
+                                {
+                                 order_by => 'uri',
+                                });
+}
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
