@@ -4,7 +4,7 @@ use warnings;
 use Data::Dumper;
 use Scalar::Util qw(blessed);
 
-use Test::Most 'die', tests => 75;
+use Test::Most 'die', tests => 101;
 
 use Interchange6::Schema;
 use Interchange6::Schema::Populate::CountryLocale;
@@ -83,6 +83,8 @@ ok( $result->has_state('NY'), "includes NY state" );
 ok( $result->has_state('DC'), "includes DC" );
 is( $result->has_state('AK'), 0, "does not include Alaska" );
 is( $result->has_state('HI'), 0, "or Hawaii" );
+is( $result->has_state('FooBar'), 0, "or FooBar" );
+is( $result->has_state($countries{GB}), 0, "or country GB (as state)" );
 
 $rset = $schema->resultset('Zone')->search( { zone => 'EU member states' } );
 cmp_ok( $rset->count, '==', 1, "Found zone: EU member states" );
@@ -90,8 +92,12 @@ cmp_ok( $rset->count, '==', 1, "Found zone: EU member states" );
 $result = $rset->next;
 cmp_ok( $result->country_count, '==', 28, "has 28 countries" );
 cmp_ok( $result->state_count,   '==', 0,  "has 0 states" );
-ok( $result->has_country('MT'), "includes Malta" );
-is( $result->has_country('IM'), 0, "does not include Isle of Man" );
+ok( $result->has_country($countries{MT}), "includes Malta (country obj)" );
+ok( $result->has_country('MT'), "includes Malta (MT)" );
+ok( $result->has_country('Malta'), "includes Malta" );
+is( $result->has_country('IM'), 0, "does not include Isle of Man (IM)" );
+is( $result->has_country('Isle of Man'), 0, "does not include Isle of Man" );
+is( $result->has_country($states{'US_CA'}), 0, "countries does not include Caliornia (state obj)" );
 
 $rset = $schema->resultset('Zone')->search( { zone => 'EU VAT countries' } );
 cmp_ok( $rset->count, '==', 1, "Found zone: EU VAT countries" );
@@ -141,6 +147,91 @@ cmp_ok( $rset->count, '==', 0, "check cascade delete in ZoneCountry" );
 $rset = $schema->resultset('Country')->search( { country_iso_code => 'CA' } );
 cmp_ok( $rset->count, '==', 1, "check cascade delete in Country" );
 
+lives_ok(
+    sub { $result->add_countries( $countries{CA} ) },
+    "Create relationship to Country for Canada in zone Canada"
+);
+
+throws_ok( sub { $result->remove_countries('FooBar') },
+    qr/Bad arg passed to remove_countries/,
+    "Fail remove country FooBar from zone Canada" );
+
+throws_ok( sub { $result->remove_countries(['FooBar']) },
+    qr/Country must be an Interchange6::Schema::Result::Country/,
+    "Fail remove country FooBar (arrayref) from zone Canada" );
+
+throws_ok( sub { $result->remove_countries([$states{'US_CA'}]) },
+    qr/Country must be an Interchange6::Schema::Result::Country/,
+    "Fail remove country FooBar (arrayref) from zone Canada" );
+
+lives_ok( sub { $result->remove_countries( [$countries{CA}] ) },
+    "Remove country CA (arrayref) from zone Canada" );
+
+lives_ok(
+    sub { $result->add_countries( $countries{CA} ) },
+    "Create relationship to Country for Canada in zone Canada"
+);
+lives_ok(
+    sub { $result->add_countries( $countries{US} ) },
+    "Create relationship to Country for United States in zone Canada"
+);
+
+throws_ok(
+    sub { $result->add_states($states{'CA_BC'}) },
+    qr /Cannot add state to zone with multiple countries/,
+    "Cannot add state to zone with multiple countries"
+);
+
+lives_ok(
+    sub { $result->remove_countries( $countries{US} ) },
+    "Remove United States from zone Canada"
+);
+
+throws_ok(
+    sub { $result->add_states($countries{CA}) },
+    qr /Bad arg passed to add_states/,
+    "Cannot add country with add_states"
+);
+
+lives_ok(
+    sub { $result->add_states($states{'CA_BC'}) },
+    "Add BC to CA"
+);
+
+throws_ok(
+    sub { $result->add_states([$states{'CA_NT'}, 'FooBar']) },
+    qr/State must be an Interchange6::Schema::Result::State/,
+    "Fail add FooBar state to CA in arrayref"
+);
+
+throws_ok(
+    sub { $result->add_states([$states{'CA_NT'}, $countries{US}]) },
+    qr/State must be an Interchange6::Schema::Result::State/,
+    "Fail add_state country obj to CA in arrayref"
+);
+
+
+lives_ok(
+    sub { $result->remove_states($states{'CA_BC'}) },
+    "Add BC to CA"
+);
+lives_ok( sub { $result->remove_countries( [$countries{CA}] ) },
+    "Remove country CA (arrayref) from zone Canada" );
+
+lives_ok( sub { $result->add_states($states{'CA_NT'}) },
+    "Add state NT to CA zone without country");
+
+is($result->has_country('CA'), 1, "Zone has country Canada");
+
+throws_ok( sub { $result->add_states($states{'CA_NT'}) },
+    qr/Zone already includes state: Northwest Te/,
+    "Fail add state NT to CA zone second time");
+
+throws_ok( sub { $result->add_states($states{'US_CA'}) },
+    qr/State California is not in country Canada/,
+    "Fail add state California to Canada zone");
+
+
 # CA GST only
 
 lives_ok( sub { $result = $rsetzone->create( { zone => 'CA GST only' } ) },
@@ -176,6 +267,12 @@ cmp_deeply(
 throws_ok(
     sub { $result->add_countries('FooBar') },
     qr/Bad arg passed to add_countries/,
+    "Exception Bad arg passed to add_countries"
+);
+
+throws_ok(
+    sub { $result->add_countries(['FooBar']) },
+    qr/Country must be an Interchange6::Schema::Result::Country/,
     "Exception Bad arg passed to add_countries"
 );
 

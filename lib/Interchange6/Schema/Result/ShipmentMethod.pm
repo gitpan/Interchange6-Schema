@@ -3,7 +3,7 @@ package Interchange6::Schema::Result::ShipmentMethod;
 
 =head1 NAME
 
-Interchange6::Schema::Result::ShipmentMethod;
+Interchange6::Schema::Result::ShipmentMethod
 
 =cut
 
@@ -60,7 +60,7 @@ __PACKAGE__->table("shipment_methods");
   is_foreign_key: 1
   is_nullable: 0
 
-head2 active
+=head2 active
 
   data_type: 'boolean'
   default_value: true

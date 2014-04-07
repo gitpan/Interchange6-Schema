@@ -248,6 +248,31 @@ Accessor to related State results ordered by name.
 __PACKAGE__->many_to_many( "states", "ZoneState", "State",
     { order_by => 'State.name' } );
 
+
+=head2 shipment_destinations
+
+C<has_many> relationship with
+L<Interchange6::Schema::Result::ShipmentDestination>
+
+=head2 shipment_methods
+
+C<many_to_many> relationship to ShipmentMethods. Currently it ignores
+the C<active> field in ShipmentDestination.
+
+=cut
+
+
+__PACKAGE__->has_many(
+                      "shipment_destinations",
+                      "Interchange6::Schema::Result::ShipmentDestination",
+                      "zones_id");
+
+
+__PACKAGE__->many_to_many("shipment_methods",
+                          "shipment_destinations",
+                          "ShipmentMethod");
+
+
 =head1 METHODS
 
 =head2 new
@@ -323,8 +348,12 @@ sub add_countries {
                 next;
             }
 
+            # be paranoid just in case of unexpected failure
             eval { $self->add_to_countries($country); };
+            # uncoverable branch true
             if ($@) {
+                # we really should not arrive here
+                # uncoverable statement
                 $self->add_error($@);
             }
         }
@@ -363,23 +392,28 @@ sub has_country {
             return 0;
         }
     }
+    else {
 
-    # maybe an ISO code?
+        # maybe an ISO code?
 
-    if ( $country =~ /^[a-z]{2}$/i ) {
+        if ( $country =~ /^[a-z]{2}$/i ) {
 
-        $rset = $self->countries->search(
-            { "Country.country_iso_code" => uc($country) } );
+            $rset = $self->countries->search(
+                { "Country.country_iso_code" => uc($country) } );
 
-        return 1 if $rset->count == 1;
+            return 1 if $rset->count == 1;
+        }
+        else {
+
+            # finally try country name
+
+            $rset = $self->countries->search( { "Country.name" => $country } );
+
+            return 1 if $rset->count == 1;
+        }
     }
 
-    # finally try country name
-
-    $rset = $self->countries->search( { "Country.name" => $country } );
-
-    return 1 if $rset->count == 1;
-
+    # failed to find the country
     return 0;
 }
 
@@ -451,8 +485,12 @@ sub remove_countries {
                 next;
             }
 
+            # be paranoid just in case of unexpected failure
             eval { $self->remove_from_countries($country); };
+            # uncoverable branch true
             if ($@) {
+                # we really should not arrive here
+                # uncoverable statement
                 $self->add_error($@);
             }
         }
@@ -520,9 +558,14 @@ sub add_states {
 
                 # add the country first
 
+                # be paranoid just in case of unexpected failure
                 eval { $self->add_countries( $state->Country ) };
+                # uncoverable branch true
                 if ($@) {
+                    # we really should not arrive here
+                    # uncoverable statement
                     $self->add_error($@);
+                    # uncoverable statement
                     next;
                 }
             }
@@ -552,8 +595,12 @@ sub add_states {
 
             # try to add the state
 
+            # be paranoid just in case of unexpected failure
             eval { $self->add_to_states($state); };
+            # uncoverable branch true
             if ($@) {
+                # we really should not arrive here
+                # uncoverable statement
                 $self->add_error($@);
             }
         }
@@ -596,22 +643,28 @@ sub has_state {
             return 0;
         }
     }
+    else {
 
-    # maybe an ISO code?
+        # maybe an ISO code?
 
-    if ( $state =~ /^[a-z]{2}$/i ) {
+        if ( $state =~ /^[a-z]{2}$/i ) {
 
-        $rset = $self->states->search( { state_iso_code => uc($state) } );
+            $rset = $self->states->search( { state_iso_code => uc($state) } );
 
-        return 1 if $rset->count == 1;
+            return 1 if $rset->count == 1;
+        }
+        else {
+
+            # finally try state name
+
+            $rset = $self->states->search( { name => $state } );
+
+            return 1 if $rset->count == 1;
+
+        }
     }
 
-    # finally try state name
-
-    $rset = $self->states->search( { name => $state } );
-
-    return 1 if $rset->count == 1;
-
+    # failed to find the state
     return 0;
 }
 
