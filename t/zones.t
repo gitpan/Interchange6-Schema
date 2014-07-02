@@ -4,7 +4,7 @@ use warnings;
 use Data::Dumper;
 use Scalar::Util qw(blessed);
 
-use Test::Most 'die', tests => 101;
+use Test::Most 'die', tests => 106;
 
 use Interchange6::Schema;
 use Interchange6::Schema::Populate::CountryLocale;
@@ -153,7 +153,7 @@ lives_ok(
 );
 
 throws_ok( sub { $result->remove_countries('FooBar') },
-    qr/Bad arg passed to remove_countries/,
+    qr/Country must be an Interchange6::Schema::Result::Country/,
     "Fail remove country FooBar from zone Canada" );
 
 throws_ok( sub { $result->remove_countries(['FooBar']) },
@@ -189,7 +189,7 @@ lives_ok(
 
 throws_ok(
     sub { $result->add_states($countries{CA}) },
-    qr /Bad arg passed to add_states/,
+    qr /State must be an Interchange6::Schema::Result::State/,
     "Cannot add country with add_states"
 );
 
@@ -231,6 +231,22 @@ throws_ok( sub { $result->add_states($states{'US_CA'}) },
     qr/State California is not in country Canada/,
     "Fail add state California to Canada zone");
 
+lives_ok(
+    sub { $result->add_states($states{'CA_BC'}) },
+    "Add BC to CA"
+);
+
+throws_ok(
+    sub { $result->remove_states(['FooBar']) },
+    qr/State must be an Interchange6::Schema::Result::State/,
+    "Fail remove_states arrayref of scalar"
+);
+
+throws_ok(
+    sub { $result->remove_states($countries{US}) },
+    qr/State must be an Interchange6::Schema::Result::State/,
+    "Fail remove_states arg is Country obj"
+);
 
 # CA GST only
 
@@ -265,15 +281,28 @@ cmp_deeply(
 );
 
 throws_ok(
+    sub { $result->add_countries(undef) },
+    qr/Country must be an Interchange6::Schema::Result::Country/,
+    "Fail add_countries with undef arg"
+);
+
+throws_ok(
+    sub { $result->add_countries([undef]) },
+    qr/Country must be an Interchange6::Schema::Result::Country/,
+    "Fail add_countries with arrayref of undef"
+);
+
+
+throws_ok(
     sub { $result->add_countries('FooBar') },
-    qr/Bad arg passed to add_countries/,
-    "Exception Bad arg passed to add_countries"
+    qr/Country must be an Interchange6::Schema::Result::Country/,
+    "Fail add_countries with scalar arg"
 );
 
 throws_ok(
     sub { $result->add_countries(['FooBar']) },
     qr/Country must be an Interchange6::Schema::Result::Country/,
-    "Exception Bad arg passed to add_countries"
+    "Fail add_countries with arrayref of scalar"
 );
 
 throws_ok(

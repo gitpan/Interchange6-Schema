@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Data::Dumper;
-use Test::More tests => 35;
+use Test::Most 'die',  tests => 38;
 
 use Try::Tiny;
 use Interchange6::Schema;
@@ -12,7 +12,7 @@ my $schema = DBICx::TestDatabase->new('Interchange6::Schema');
 
 # create attributes and attribute values
 my @attributes = ({name => 'color', title => 'Color',
-                   AttributeValue =>
+                   attribute_values =>
                    [{value => 'black', title => 'Black'},
                     {value => 'white', title => 'White'},
                    ]},
@@ -28,14 +28,14 @@ for my $att (@attributes) {
 my $count;
 my $attribute_values;
 
-$attribute_values = $schema->resultset('Attribute')->find({name => 'color'})->search_related('AttributeValue');
+$attribute_values = $schema->resultset('Attribute')->find({name => 'color'})->search_related('attribute_values');
 
 $count = $attribute_values->count;
 
 ok($count == 2, "Testing number of color attribute values")
     || diag "Count: $count.";
 
-$attribute_values = $schema->resultset('Attribute')->find({name => 'size'})->search_related('AttributeValue');
+$attribute_values = $schema->resultset('Attribute')->find({name => 'size'})->search_related('attribute_values');
 
 $count = $attribute_values->count;
 
@@ -81,6 +81,18 @@ ok($product_path[0]->uri eq 'Nuts' && $product_path[1]->uri eq 'Nuts/Walnuts',
    "URI in path for BN004")
     || diag "Uri path: ", $product_path[0]->uri, ',', $product_path[1]->uri;
 
+# also check in scalar context
+
+my $product_path = $product->path;
+
+ok(scalar(@$product_path) == 2, "Length of path for BN004")
+    || diag "Length: ", scalar(@$product_path);
+
+ok($product_path->[0]->uri eq 'Nuts' && $product_path->[1]->uri eq 'Nuts/Walnuts',
+   "URI in path for BN004")
+    || diag "Uri path: ", $product_path->[0]->uri, ',', $product_path->[1]->uri;
+
+
 # add product to country navigation
 
 @path = ({name => 'South America', uri => 'South-America', type => 'country'},
@@ -123,6 +135,7 @@ ok($user->id == 1, "Testing user id.")
 my $pwd = $user->password;
 
 ok($pwd ne 'nevairbe', 'Test password encryption');
+like($pwd, qr/^\$2a\$14\$.{53}$/, "Check password hash has correct format");
 
 # check that username is unique
 my $dup_error;
@@ -137,7 +150,6 @@ for my $username ('nevairbe@nitesi.de', 'NevairBe@nitesi.de') {
     }
     catch {
         $dup_error = shift;
-        print "XXX $dup_error\n";
     };
 
     ok($dup_error =~ /(column username is not unique|UNIQUE constraint failed: users.username)/,

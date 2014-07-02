@@ -9,11 +9,11 @@ Interchange6::Schema - Database Schema for Interchange 6
 
 =head1 VERSION
 
-0.032
+0.040
 
 =cut
 
-our $VERSION = '0.032';
+our $VERSION = '0.040';
 
 =head1 DESCRIPTION
 
@@ -191,6 +191,24 @@ L<Interchange6::Schema::Result::OrderlinesShipping>
 
 L<Interchange6::Schema::Result::PaymentOrder>
 
+=head2 Shipments
+
+=head3 Shipment
+
+L<Interchange6::Schema::Result::Shipment>
+
+=head3 Carrier
+
+L<Interchange6::Schema::Result::ShipmentCarrier>
+
+=head3 Method
+
+L<Interchange6::Schema::Result::ShipmentMethod>
+
+=head3 Rate
+
+L<Interchange6::Schema::Result::ShipmentRate>
+
 =head2 Session
 
 L<Interchange6::Schema::Result::Session>
@@ -219,9 +237,25 @@ L<Interchange6::Schema::Populate::CountryLocale>
 
 L<Interchange6::Schema::Populate::StateLocale>
 
+=head1 POLICY FOR RELATIONSHIP ACCESSORS
+
+=over 4
+
+=item All lower case
+
+=item Singular names for belongs_to and has_one relationships
+
+=item Pluralised names for many_to_many and has_many relationships
+
+=item Use underscores for things like C<shipment_destinations>.
+
+=back
+
 =head1 AUTHORS
 
 Stefan Hornburg (Racke), C<racke@linuxia.de>
+
+Peter Mottram, C<peter@sysnix.com>
 
 Jeff Boes, C<jeff@endpoint.com>
 

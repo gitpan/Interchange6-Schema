@@ -4,7 +4,7 @@ use warnings;
 use Data::Dumper;
 use Scalar::Util qw(blessed);
 
-use Test::Most 'die', tests => 7;
+use Test::Most 'die', tests => 8;
 
 use Interchange6::Schema;
 use Interchange6::Schema::Populate::CountryLocale;
@@ -46,7 +46,7 @@ $users{john} = $schema->resultset("User")->create(
         password => 'ohhjohnnyboy',
         first_name => 'John',
         last_name => 'Doe', email => 'john@johndoeinc.local',
-            Address => [
+            addresses => [
                 {    
                     type => 'shipping',
                     address => 'Test Road',
@@ -101,10 +101,29 @@ ok($carrier{UPS}->id eq '1', "Testing ShipmentCarrier record creation.")
     || diag "UPS ShipmentCarrier id: " . $carrier{UPS}->id;
 
 
-my $shipment_method = $schema->resultset("ShipmentMethod")->find({ title => 'Next Day Air Early AM' } );
+my $shipment_method = $schema->resultset("ShipmentMethod")->find({ title => 'Ground Residential' } );
 
-ok($shipment_method->name eq '1DM', "Testing ShipmentMethod record creation.")
-    || diag "UPS Next Day Air Early AM name: " . $shipment_method->name;
+ok($shipment_method->name eq 'GNDRES', "Testing ShipmentMethod record creation.")
+    || diag "UPS Ground Residential name: " . $shipment_method->name;
+
+my $lower48 = $schema->resultset("Zone")->find({ zone => 'US lower 48'});
+
+my %flat_rate;
+
+$flat_rate{GROUND} = $schema->resultset("ShipmentRate")->create(
+    {
+        zones_id => $lower48->id,
+        shipment_methods_id => $shipment_method->id,
+        min_weight => '0',
+        max_weight => '0',
+        price => '9.95',
+    }
+);
+
+my $shipment_rate = $schema->resultset("ShipmentRate")->find({ shipment_methods_id => $shipment_method->id });
+
+ok($shipment_rate->price eq '9.95', "Testing flat rate shipping price fir UPS Ground lower 48 states.")
+    || diag "Flat rate shipping price. " . $shipment_rate->price;
 
 my %order;
  
@@ -117,7 +136,7 @@ $order{IC60001} = $schema->resultset("Order")->create(
         shipping_addresses_id => $users{john}{address}->id,
         billing_addresses_id => $users{john}{address}->id,
         order_date => $dt,
-            Orderline => [
+            orderlines => [
                 {
                     order_position => '1',
                     sku => 'WBA0002',
@@ -139,7 +158,7 @@ $order{IC60001} = $schema->resultset("Order")->create(
 
 my %orderline;
 
-$orderline{1} = $order{IC60001}->find_related('Orderline', '1');
+$orderline{1} = $order{IC60001}->find_related('orderlines', '1');
 
 ok($orderline{1}->sku eq 'WBA0002', "Testing Orderline record creation.")
     || diag "Orderline 1 sku: " . $orderline{1}->sku;
@@ -165,13 +184,13 @@ my $orderlines_shipping = $schema->resultset("OrderlinesShipping")->create(
 # test all relationships
 
 # find order
-my $order_rs = $users{john}->find_related('Order', {order_number => 'IC60001'});
+my $order_rs = $users{john}->find_related('orders', {order_number => 'IC60001'});
 
-my $orderline_rs = $order_rs->find_related('Orderline', {orders_id => $order_rs->id });
+my $orderline_rs = $order_rs->find_related('orderlines', {orders_id => $order_rs->id });
 
-my $orderline_shipping_rs = $orderline_rs->find_related('OrderlinesShipping', {orderlines_id => $orderline_rs->id});
+my $orderline_shipping_rs = $orderline_rs->find_related('orderlines_shipping', {orderlines_id => $orderline_rs->id});
 
-my $shipment_rs = $orderline_shipping_rs->find_related('Shipment', {shipments_id => '1' });
+my $shipment_rs = $orderline_shipping_rs->find_related('shipment', {shipments_id => '1' });
 
 ok($shipment_rs->tracking_number eq '1Z99283WNMS984920498320', "Testing tracking number.")
     || diag "Tracking number: " . $shipment_rs->tracking_number;

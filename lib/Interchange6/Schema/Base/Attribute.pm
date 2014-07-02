@@ -54,10 +54,10 @@ sub add_attribute {
     my ($attribute, $attribute_value) = $self->find_or_create_attribute($attr, $attr_value);
 
     # create base_attribute object
-    my $base_attribute = $self->find_or_create_related($base . 'Attribute',
+    my $base_attribute = $self->find_or_create_related(lc($base) . '_attributes',
                                                        {attributes_id => $attribute->id});
     # create base_attribute_value
-    $base_attribute->create_related($base . 'AttributeValue',
+    $base_attribute->create_related(lc($base) . '_attribute_values',
                                     {attribute_values_id => $attribute_value->id});
 
     return $self;
@@ -119,9 +119,9 @@ sub search_attributes {
     my ($self) = @_;
     my $base = $self->result_source->source_name;
 
-    my $base_attributes = $self->search_related($base . 'Attribute');
+    my $base_attributes = $self->search_related(lc($base) . '_attributes');
 
-    my $attributes = $base_attributes->search_related('Attribute');
+    my $attributes = $base_attributes->search_related('attribute');
 
     return $attributes;
 }
@@ -141,12 +141,12 @@ sub find_attribute_value {
     my $base = $self->result_source->source_name;
     my $lc_base = lc($base);
 
-    my %attr = ref($args) eq 'HASH' ? %{$args} : (name => $args);
-
     # attribute must be set
     unless ($args) {
-       die "find_attribute_value input requires atleast a valid attribute value";
+       die "find_attribute_value input requires at least a valid attribute value";
     };
+
+    my %attr = ref($args) eq 'HASH' ? %{$args} : (name => $args);
 
     my $attribute = $self->result_source->schema->resultset('Attribute')->find( \%attr );
 
@@ -155,20 +155,20 @@ sub find_attribute_value {
     }
 
     # find records
-    my $base_attribute = $self->find_related($base . 'Attribute',
+    my $base_attribute = $self->find_related($lc_base . '_attributes',
                                             {attributes_id => $attribute->id});
 
     unless ($base_attribute) {
         return;
     }
 
-    my $base_attribute_value = $base_attribute->find_related($base .'AttributeValue',
+    my $base_attribute_value = $base_attribute->find_related($lc_base .'_attribute_values',
                                             {$lc_base . '_attributes_id' => $base_attribute->id});
     unless ($base_attribute_value) {
         return;
     }
 
-    my $attribute_value = $base_attribute_value->find_related('AttributeValue',
+    my $attribute_value = $base_attribute_value->find_related('attribute_value',
                                             {lc($base) .'_attribute_values_id' => $base_attribute_value->id});
     if ($object) {
         return $attribute_value;
@@ -185,22 +185,22 @@ Find or create attribute and attribute_value.
 =cut
 
 sub find_or_create_attribute {
-    my ($self, @args) = @_;
+    my ( $self, $attr, $value ) = @_;
 
-    # check if $args[0] is a HASH if not set as name
-    my %attr = ref($args[0]) eq 'HASH' ? %{$args[0]} : (name => $args[0]);
-
-    unless (defined($args[0] && $args[1])) {
+    unless ( defined($attr) && defined($value) ) {
         die "Both attribute and attribute value are required for find_or_create_attribute";
     }
 
-    # check if $args[1] is a HASH if not set as value
-    my %attr_value = ref($args[1]) eq 'HASH' ? %{$args[1]} : (value => $args[1]);
+    # check if $attr is a HASH if not set as name
+    my %attr = ref($attr) eq 'HASH' ? %{$attr} : (name => $attr);
+
+    # check if $value is a HASH if not set as value
+    my %attr_value = ref($value) eq 'HASH' ? %{$value} : (value => $value);
 
     my $attribute = $self->result_source->schema->resultset('Attribute')->find_or_create( %attr );
 
     # create attribute_values
-    my $attribute_value = $attribute->find_or_create_related('AttributeValue', \%attr_value );
+    my $attribute_value = $attribute->find_or_create_related('attribute_values', \%attr_value );
 
     return ($attribute, $attribute_value);
 };
@@ -213,16 +213,21 @@ From a $base->attribute input $base_attribute, $base_attribute_value is returned
 
 sub find_base_attribute_value {
     my ($self, $attribute, $base) = @_;
-    my $lc_base = lc($base);
+
+    unless($base) {
+        die "Missing base name for find_base_attribute_value";
+    }
 
     unless($attribute) {
         die "Missing attribute object for find_base_attribute_value";
     }
 
-    my $base_attribute = $self->find_related($base . 'Attribute',
+    my $lc_base = lc($base);
+
+    my $base_attribute = $self->find_related($lc_base . '_attributes',
                                             {attributes_id => $attribute->id});
 
-    my $base_attribute_value = $base_attribute->find_related($base . 'AttributeValue',
+    my $base_attribute_value = $base_attribute->find_related($lc_base . '_attribute_values',
                                             {$lc_base . '_attributes_id' => $base_attribute->id});
 
     return ($base_attribute, $base_attribute_value);

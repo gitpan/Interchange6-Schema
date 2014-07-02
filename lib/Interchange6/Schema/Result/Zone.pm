@@ -47,11 +47,10 @@ For example to create a trading group like the European Union.
 
 =item * A single country
 
-Probably what to use in combination with postal ranges.
 
 =item * A single country with a single state
 
-For example Qubec in Canada which has GST + QST
+For example Quebec in Canada which has GST + QST
 
 =item * A single country with multiple states
 
@@ -87,8 +86,6 @@ B<NOTE:> avoid using other methods from L<DBIx::Class::Relationship::Base> since
 
 =head1 ACCESSORS
 
-NOTE: postal_range_state and postal_range_end are only really useful when the zone contains a single country.
-
 =head2 zones_id
 
   data_type: 'integer'
@@ -103,20 +100,6 @@ For example for storing the UPS/USPS zone code or perhaps a simple name for the 
   data_type: 'varchar'
   default_value: (empty string)
   is_nullable: 1
-  size: 255
-
-=head2 postal_range_start
-
-  data_type: 'varchar'
-  default_value: (empty string)
-  is_nullable: 0
-  size: 255
-
-=head2 postal_range_end
-
-  data_type: 'varchar'
-  default_value: (empty string)
-  is_nullable: 0
   size: 255
 
 =head2 created
@@ -147,20 +130,6 @@ __PACKAGE__->add_columns(
         data_type     => "varchar",
         default_value => "",
         is_nullable   => 1,
-        size          => 255
-    },
-    "postal_range_start",
-    {
-        data_type     => "varchar",
-        default_value => "",
-        is_nullable   => 0,
-        size          => 255
-    },
-    "postal_range_end",
-    {
-        data_type     => "varchar",
-        default_value => "",
-        is_nullable   => 0,
         size          => 255
     },
     "created",
@@ -200,7 +169,7 @@ __PACKAGE__->add_unique_constraint(
 
 =head1 RELATIONS
 
-=head2 ZoneCountry
+=head2 zone_countries
 
 Type: has_many
 
@@ -209,7 +178,7 @@ Related object: L<Interchange6::Schema::Result::ZoneCountry>
 =cut
 
 __PACKAGE__->has_many(
-    "ZoneCountry", "Interchange6::Schema::Result::ZoneCountry",
+    "zone_countries", "Interchange6::Schema::Result::ZoneCountry",
     "zones_id", { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -217,14 +186,14 @@ __PACKAGE__->has_many(
 
 Type: many_to_many
 
-Accessor to related Country results ordered by name.
+Accessor to related country results ordered by name.
 
 =cut
 
-__PACKAGE__->many_to_many( "countries", "ZoneCountry", "Country",
+__PACKAGE__->many_to_many( "countries", "zone_countries", "country",
     { order_by => 'Country.name' } );
 
-=head2 ZoneState
+=head2 zone_states
 
 Type: has_many
 
@@ -233,7 +202,7 @@ Related object: L<Interchange6::Schema::Result::ZoneState>
 =cut
 
 __PACKAGE__->has_many(
-    "ZoneState", "Interchange6::Schema::Result::ZoneState",
+    "zone_states", "Interchange6::Schema::Result::ZoneState",
     "zones_id", { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -241,11 +210,11 @@ __PACKAGE__->has_many(
 
 Type: many_to_many
 
-Accessor to related State results ordered by name.
+Accessor to related state results ordered by name.
 
 =cut
 
-__PACKAGE__->many_to_many( "states", "ZoneState", "State",
+__PACKAGE__->many_to_many( "states", "zone_states", "state",
     { order_by => 'State.name' } );
 
 
@@ -254,24 +223,23 @@ __PACKAGE__->many_to_many( "states", "ZoneState", "State",
 C<has_many> relationship with
 L<Interchange6::Schema::Result::ShipmentDestination>
 
-=head2 shipment_methods
-
-C<many_to_many> relationship to ShipmentMethods. Currently it ignores
-the C<active> field in ShipmentDestination.
-
 =cut
-
 
 __PACKAGE__->has_many(
                       "shipment_destinations",
                       "Interchange6::Schema::Result::ShipmentDestination",
                       "zones_id");
 
+=head2 shipment_methods
+
+C<many_to_many> relationship to shipment_method. Currently it ignores
+the C<active> field in shipment_destinations.
+
+=cut
 
 __PACKAGE__->many_to_many("shipment_methods",
                           "shipment_destinations",
-                          "ShipmentMethod");
-
+                          "shipment_method");
 
 =head1 METHODS
 
@@ -309,18 +277,10 @@ sub add_countries {
     if ( $self->state_count > 0 ) {
         $self->add_error("Cannot add countries to zone containing states");
     }
-    else {
+    elsif ( ref($arg) ne "ARRAY" ) {
 
-        if ( ref($arg) eq 'Interchange6::Schema::Result::Country' ) {
-
-            # a single arg so convert to arrayref and continue
-            $arg = [$arg];
-        }
-        elsif ( ref($arg) ne "ARRAY" ) {
-
-            # argument not something we expected
-            $self->add_error( "Bad arg passed to add_countries: " . ref($arg) );
-        }
+        # we need an arrayref
+        $arg = [$arg];
     }
 
     # use a transaction when adding countries so that all succeed or all fail
@@ -448,15 +408,10 @@ sub remove_countries {
         $self->add_error("States must be removed before countries");
 
     }
-    elsif ( ref($arg) eq 'Interchange6::Schema::Result::Country' ) {
-
-        # a single arg so convert to arrayref and continue
-        $arg = [$arg];
-    }
     elsif ( ref($arg) ne "ARRAY" ) {
 
-        # argument not something we expected
-        $self->add_error( "Bad arg passed to remove_countries: " . ref($arg) );
+        # convert to arrayref
+        $arg = [$arg];
     }
 
     # use a transaction when removing countries so that all succeed or all fail
@@ -524,15 +479,10 @@ sub add_states {
 
         $self->add_error("Cannot add state to zone with multiple countries");
     }
-    elsif ( ref($arg) eq 'Interchange6::Schema::Result::State' ) {
-
-        # a single arg so convert to arrayref and continue
-        $arg = [$arg];
-    }
     elsif ( ref($arg) ne "ARRAY" ) {
 
-        # argument not something we expected
-        $self->add_error( "Bad arg passed to add_states: " . ref($arg) );
+        # we need an arayref
+        $arg = [$arg];
     }
 
     # use a transaction when adding states so that all succeed or all fail
@@ -559,7 +509,7 @@ sub add_states {
                 # add the country first
 
                 # be paranoid just in case of unexpected failure
-                eval { $self->add_countries( $state->Country ) };
+                eval { $self->add_countries( $state->country ) };
                 # uncoverable branch true
                 if ($@) {
                     # we really should not arrive here
@@ -577,7 +527,7 @@ sub add_states {
                   $self->countries->search( {}, { rows => 1 } )->single;
 
                 unless ( $country->country_iso_code eq
-                    $state->Country->country_iso_code )
+                    $state->country->country_iso_code )
                 {
                     $self->add_error( "State "
                           . $state->name
@@ -694,41 +644,34 @@ sub remove_states {
 
     $self->clear_errors;
 
-    if ( ref($arg) eq 'Interchange6::Schema::Result::State' ) {
+    if ( ref($arg) ne "ARRAY" ) {
 
-        # a single arg so convert to arrayref and continue
+        # we need an arrayref
         $arg = [$arg];
-    }
-    elsif ( ref($arg) ne "ARRAY" ) {
-
-        # argument not something we expected
-        $self->add_error( "Bad arg passed to remove_states: " . ref($arg) );
     }
 
     # use a transaction when removing states so that all succeed or all fail
 
     my $guard = $schema->txn_scope_guard;
 
-    unless ( $self->has_error ) {
+    foreach my $state (@$arg) {
 
-        # don't try to remove states if we already have errors
+        unless ( blessed($state)
+            && $state->isa('Interchange6::Schema::Result::State') )
+        {
 
-        foreach my $state (@$arg) {
+            $self->add_error(
+                "State must be an Interchange6::Schema::Result::State");
+            next;
+        }
 
-            unless ( blessed($state)
-                && $state->isa('Interchange6::Schema::Result::State') )
-            {
-
-                $self->add_error(
-                    "State must be an Interchange6::Schema::Result::State");
-                next;
-            }
-
-            # try to remove the state
-            eval { $self->remove_from_states($state); };
-            if ($@) {
-                $self->add_error($@);
-            }
+        # be paranoid just in case of unexpected failure
+        eval { $self->remove_from_states($state); };
+        # uncoverable branch true
+        if ($@) {
+            # we really should not arrive here
+            # uncoverable statement
+            $self->add_error($@);
         }
     }
 
