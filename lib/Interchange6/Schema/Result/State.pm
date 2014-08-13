@@ -81,7 +81,7 @@ __PACKAGE__->table("states");
 =head2 active
 
   data_type: 'boolean'
-  default_value: true
+  default_value: 1
   is_nullable: 0
 
 =cut
@@ -100,7 +100,7 @@ __PACKAGE__->add_columns(
   "priority",
   { data_type => "integer", default_value => 0, is_nullable => 0 },
   "active",
-  { data_type => "boolean", default_value => \"true", is_nullable => 0 },
+  { data_type => "boolean", default_value => 1, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -114,6 +114,24 @@ __PACKAGE__->add_columns(
 =cut
 
 __PACKAGE__->set_primary_key("states_id");
+
+=head1 UNIQUE CONSTRAINT
+
+=head2 states_state_country
+
+=over 4
+
+=item * L</country_iso_code>
+
+=item * L</state_iso_code>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint(
+    states_state_country => [ qw/country_iso_code state_iso_code/ ]
+);
 
 =head1 RELATIONS
 

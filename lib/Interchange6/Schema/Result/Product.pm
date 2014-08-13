@@ -53,7 +53,6 @@ B<Single Product> A single product does not have child products and will become 
 =head2 name
 
   data_type: 'varchar'
-  default_value: (empty string)
   is_nullable: 0
   size: 255
 
@@ -67,7 +66,6 @@ B<Single Product> A single product does not have child products and will become 
 =head2 description
 
   data_type: 'text'
-  default_value: (empty string)
   is_nullable: 0
 
 =head2 price
@@ -119,13 +117,13 @@ The SKU of the main product if this product is a variant of a main product, othe
 =head2 active
 
   data_type: 'boolean'
-  default_value: true
+  default_value: 1
   is_nullable: 0
 
 =head2 inventory_exempt
 
   data_type: 'boolean'
-  default_value: false
+  default_value: 0
   is_nullable: 0
 
 =head2 created
@@ -147,11 +145,11 @@ __PACKAGE__->add_columns(
   "sku",
   { data_type => "varchar", is_nullable => 0, size => 64 },
   "name",
-  { data_type => "varchar", default_value => "", is_nullable => 0, size => 255 },
+  { data_type => "varchar", is_nullable => 0, size => 255 },
   "short_description",
   { data_type => "varchar", default_value => "", is_nullable => 0, size => 500 },
   "description",
-  { data_type => "text", default_value => "", is_nullable => 0 },
+  { data_type => "text", is_nullable => 0 },
   "price",
   { data_type => "numeric", default_value => "0.0", is_nullable => 0, size => [10, 2] },
   "uri",
@@ -165,9 +163,9 @@ __PACKAGE__->add_columns(
   "canonical_sku",
   { data_type => "varchar", is_nullable => 1, size => 64 },
   "active",
-  { data_type => "boolean", default_value => \"true", is_nullable => 0 },
+  { data_type => "boolean", default_value => 1, is_nullable => 0 },
   "inventory_exempt",
-  { data_type => "boolean", default_value => \"false", is_nullable => 0 },
+  { data_type => "boolean", default_value => 0, is_nullable => 0 },
   "created",
   { data_type => "datetime", set_on_create => 1, is_nullable => 0 },
   "last_modified",
@@ -193,7 +191,7 @@ sub path {
     my $options = {};
 
     if (defined $type) {
-        $options = {"Navigation.type" => $type};
+        $options = {"navigation.type" => $type};
     }
 
     # search navigation entries for this product
@@ -291,15 +289,76 @@ sub find_variant {
     return;
 };
 
-=head2 attribute_iterator
+=head2 attribute_iterator( %args )
 
-Returns nested iterator for product attributes.
+=over 4
 
-For canonical products, it shows all the attributes
-of the child products.
+=item Arguments: C<< hashref => 1 >>
 
-For a child product, it shows all the attributes
-of the siblings.
+=back
+
+Return a hashref of attributes keyed on attribute name instead of an arrayref.
+
+=over 4
+
+=item Arguments: C<< selected => $sku >>
+
+=back
+
+Set the 'selected' SKU. For a child product this is set automatically.
+
+=over 4
+
+=item Returns: An arrayref of attributes complete with their respective attribute values.
+
+=back
+
+For canonical products, it shows all the attributes of the child products.
+
+For a child product, it shows all the attributes of the siblings.
+
+Example of returned arrayref:
+
+   [
+     {
+       attribute_values => [
+         {
+           priority => 2,
+           selected => 0,
+           title => "Pink",
+           value => "pink"
+         },
+         {
+           priority => 1,
+           selected => 0,
+           title => "Yellow",
+           value => "yellow"
+         }
+       ],
+       name => "color",
+       priority => 2,
+       title => "Color"
+     },
+     {
+       attribute_values => [
+         {
+           priority => 2,
+           selected => 0,
+           title => "Small",
+           value => "small"
+         },
+         {
+           priority => 1,
+           selected => 0,
+           title => "Medium",
+           value => "medium"
+         },
+       ],
+       name => "size",
+       priority => 1,
+       title => "Size"
+     }
+   ]
 
 =cut
 
@@ -459,6 +518,7 @@ sub add_variants {
 
     return $self;
 }
+
 
 =head1 PRIMARY KEY
 
@@ -672,7 +732,34 @@ Type: many_to_many with media
 
 __PACKAGE__->many_to_many("media", "media_products", "media");
 
+=head2 _product_reviews
+
+Type: has_many
+
+Related object: L<Interchange6::Schema::Result::ProductReview>
+
+This is considered a private method. Please see public L</product_reviews> method.
+
+=cut
+
+__PACKAGE__->has_many(
+  "_product_reviews",
+  "Interchange6::Schema::Result::ProductReview",
+  "sku",
+);
+
+=head2 _reviews
+
+Type: many_to_many
+
+This is considered a private method. Accessor to related Message results. Please see public L</reviews> and L</add_to_reviews> methods.
+
+=cut
+
+__PACKAGE__->many_to_many("_reviews", "_product_reviews", "message");
+
 =head1 METHODS
+
 
 =head2 media_by_type
 
@@ -696,5 +783,115 @@ sub media_by_type {
                                  order_by => 'uri',
                                 });
 }
+
+=head2 product_reviews
+
+Reviews should only be associated with parent products. This method returns the related ProductReview records for a parent product. For a child product the ProductReview records for the parent are returned.
+
+=cut
+
+sub product_reviews {
+    my $self = shift;
+    if ( $self->canonical_sku ) {
+        return $self->canonical->_product_reviews;
+    }
+    else {
+        return $self->_product_reviews;
+    }
+}
+
+=head2 reviews
+
+Reviews should only be associated with parent products. This method returns the related Message (reviews) records for a parent product. For a child product the Message records for the parent are returned.
+
+=cut
+
+sub reviews {
+    my $self = shift;
+    if ( $self->canonical_sku ) {
+        return $self->canonical->_reviews;
+    }
+    else {
+        return $self->_reviews;
+    }
+}
+
+=head2 add_to_reviews
+
+Reviews should only be associated with parent products. This method returns the related ProductReview records for a parent product. For a child product the ProductReview records for the parent are returned.
+
+=cut
+
+# much of this was cargo-culted from DBIx::Class::Relationship::ManyToMany
+
+sub add_to_reviews {
+    my $self = shift;
+    @_ > 0 or $self->throw_exception(
+        "add_to_reviews needs an object or hashref"
+    );
+    my $rset_message = $self->result_source->schema->resultset("Message");
+    my $obj;
+    if (ref $_[0]) {
+        if (ref $_[0] eq 'HASH') {
+            $_[0]->{type} = "product_review";
+            $obj = $rset_message->create($_[0]);
+        } else {
+            $obj = $_[0];
+            unless ( my $type = $obj->message_type->name eq "product_review" ) {
+                $self->throw_exception(
+                    "cannot add message type $type to reviews"
+                );
+            }
+        }
+    }
+    else {
+        push @_, type => "product_review";
+        $obj = $rset_message->create({@_});
+    }
+    my $sku = $self->canonical_sku || $self->sku;
+    $self->product_reviews->create({ sku => $sku, messages_id => $obj->id } );
+    return $obj;
+}
+
+=head2 set_reviews
+
+=over 4
+
+=item Arguments: (\@hashrefs_of_col_data | \@result_objs)
+
+=item Return Value: not defined
+
+=back
+
+Similar to L<DBIx::Class::Relationship::Base/set_$rel> except that this method DOES delete objects in the table on the right side of the relation.
+
+=cut
+
+sub set_reviews {
+    my $self = shift;
+    @_ > 0 or $self->throw_exception(
+        "set_reviews needs a list of objects or hashrefs"
+    );
+    my @to_set = (ref($_[0]) eq 'ARRAY' ? @{ $_[0] } : @_);
+    $self->product_reviews->delete_all;
+    $self->add_to_reviews($_, ref($_[1]) ? $_[1] : {}) for (@to_set);
+}
+
+=head2 delete
+
+Overload delete to force removal of any product reviews. Only parent products should have reviews so in the case of child products no attempt is made to delete reviews.
+
+=cut
+
+# FIXME: (SysPete) There ought to be a way to force this with cascade delete.
+
+sub delete {
+    my ( $self, @args ) = @_;
+    my $guard = $self->result_source->schema->txn_scope_guard;
+    $self->product_reviews->delete_all unless defined $self->canonical_sku;
+    $self->next::method(@args);
+    $guard->commit;
+}
+
 
 1;

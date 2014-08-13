@@ -316,4 +316,132 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 order_comments
+
+Type: has_many
+
+Related object: L<Interchange6::Schema::Result::OrderComment>
+
+=cut
+
+__PACKAGE__->has_many(
+    'order_comments',
+    'Interchange6::Schema::Result::OrderComment',
+    'orders_id',
+);
+
+=head2 _comments
+
+Type: many_to_many
+
+This is considered a private method. Please see public L</comments> and L</add_to_comments> methods.
+
+=cut
+
+__PACKAGE__->many_to_many( "_comments", "order_comments", "message" );
+
+=head1 METHODS
+
+=head2 comments
+
+=over 4
+ 
+=item Arguments: none
+
+=item Return Value: L<Interchange6::Schema::Result::Message> resultset.
+
+=back
+ 
+=cut
+
+sub comments {
+    return shift->_comments(@_);
+}
+
+
+=head2 add_to_comments
+
+=over 4
+ 
+=item Arguments: \%col_data
+ 
+=item Return Value: L<Interchange6::Schema::Result::Message>
+ 
+=back
+
+See L<DBIx::Class::Relationship::Base/add_to_$rel> many_to_many for further details.
+
+=cut
+
+# much of this was cargo-culted from DBIx::Class::Relationship::ManyToMany
+
+sub add_to_comments {
+    my $self = shift;
+    @_ > 0 or $self->throw_exception(
+        "add_to_comments needs an object or hashref"
+    );
+    my $rset_message = $self->result_source->schema->resultset("Message");
+    my $obj;
+    if (ref $_[0]) {
+        if (ref $_[0] eq 'HASH') {
+            $_[0]->{type} = "order_comment";
+            $obj = $rset_message->create($_[0]);
+        } else {
+            $obj = $_[0];
+            unless ( my $type = $obj->message_type->name eq "order_comment" ) {
+                $self->throw_exception(
+                    "cannot add message type $type to comments"
+                );
+            }
+        }
+    }
+    else {
+        push @_, type => "order_comment";
+        $obj = $rset_message->create({@_});
+    }
+    $self->create_related('order_comments', { messages_id => $obj->id } );
+    return $obj;
+}
+
+=head2 set_comments
+
+=over 4
+ 
+=item Arguments: (\@hashrefs_of_col_data | \@result_objs)
+ 
+=item Return Value: not defined
+ 
+=back
+
+Similar to L<DBIx::Class::Relationship::Base/set_$rel> except that this method D
+OES delete objects in the table on the right side of the relation.
+
+=cut
+
+sub set_comments {
+    my $self = shift;
+    @_ > 0 or $self->throw_exception(
+        "set_comments needs a list of objects or hashrefs"
+    );
+    my @to_set = (ref($_[0]) eq 'ARRAY' ? @{ $_[0] } : @_);
+    $self->order_comments->delete_all;
+    $self->add_to_comments($_, ref($_[1]) ? $_[1] : {}) for (@to_set);
+}
+
+=head2 delete
+
+Overload delete to force removal of any order comments.
+
+=cut
+
+# FIXME: (SysPete) There ought to be a way to force this with cascade delete.
+
+sub delete {
+    my ( $self, @args ) = @_;
+    my $guard = $self->result_source->schema->txn_scope_guard;
+    $self->order_comments->delete_all;
+    $self->next::method(@args);
+    $guard->commit;
+}
+
 1;

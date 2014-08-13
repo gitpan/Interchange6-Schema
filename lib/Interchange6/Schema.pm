@@ -9,11 +9,11 @@ Interchange6::Schema - Database Schema for Interchange 6
 
 =head1 VERSION
 
-0.040
+0.050
 
 =cut
 
-our $VERSION = '0.040';
+our $VERSION = '0.050';
 
 =head1 DESCRIPTION
 
@@ -145,6 +145,18 @@ L<Interchange6::Schema::Result::UserAttributeValue>
 
 L<Interchange6::Schema::Result::Address>
 
+=head2 Message
+
+L<Interchange6::Schema::Result::Message>
+
+=head3 OrderComment
+
+L<Interchange6::Schema::Result::OrderComment>
+
+=head3 ProductReview
+
+L<Interchange6::Schema::Result::ProductReview>
+
 =head2 Countries, States and Zones
 
 =head3 Country
@@ -237,6 +249,10 @@ L<Interchange6::Schema::Populate::CountryLocale>
 
 L<Interchange6::Schema::Populate::StateLocale>
 
+=head2 MessageType
+
+L<Interchange6::Schema::Populate::MessageType>
+
 =head1 POLICY FOR RELATIONSHIP ACCESSORS
 
 =over 4
@@ -264,8 +280,8 @@ Sam Batschelet C<sbatschelet@mac.com>
 =head1 CONTRIBUTORS
 
 Kaare Rasmussen
-SysPete
 Šimun Kodžoman
+Grega Pompe
 
 =head1 LICENSE AND COPYRIGHT
 
@@ -279,19 +295,25 @@ See http://dev.perl.org/licenses/ for more information.
 
 =cut
 
-# Created by DBIx::Class::Schema::Loader
-# DO NOT MODIFY THE FIRST PART OF THIS FILE
-
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Schema';
 
+# overload _map_namespaces so we can remove junk classes that might have
+# been installed in a previous version but are no longer used
+
+sub _map_namespaces {
+  my $self = shift;
+ 
+  my $res = $self->next::method(@_);
+
+  # Review renamed to ProductReview at 0.050
+  delete $res->{Review};
+
+  return $res;
+}
+
 __PACKAGE__->load_namespaces;
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-11-08 09:31:06
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:A+AhSjuWjRp6Y39vdVcJxg
-
-
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

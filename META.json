@@ -4,7 +4,7 @@
       "Stefan Hornburg (Racke) <racke@linuxia.de>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "ExtUtils::MakeMaker version 6.66, CPAN::Meta::Converter version 2.133380",
+   "generated_by" : "ExtUtils::MakeMaker version 6.98, CPAN::Meta::Converter version 2.140640",
    "license" : [
       "perl_5"
    ],
@@ -24,11 +24,14 @@
          "requires" : {
             "DBD::SQLite" : "1.3801",
             "DBICx::TestDatabase" : "0",
+            "Data::Dumper::Concise" : "0",
             "File::Slurp" : "0",
             "Locale::Country" : "0",
-            "Test::MockTime" : "0.12",
+            "Number::Format" : "0",
+            "Test::MockDateTime" : "0.02",
             "Test::More" : "0",
             "Test::Most" : "0.33",
+            "Test::Roo" : "1.003",
             "Test::Warnings" : "0",
             "Try::Tiny" : "0"
          }
@@ -51,6 +54,7 @@
             "MooX::HandlesVia" : "0.001005",
             "MooX::Types::MooseLike" : "0.25",
             "SQL::Translator" : "0.11016",
+            "Sub::Quote" : "1.004006",
             "Time::Duration::Parse" : "0",
             "perl" : "5.014000"
          }
@@ -65,5 +69,5 @@
          "url" : "https://github.com/interchange/interchange6-schema.git"
       }
    },
-   "version" : "0.040"
+   "version" : "0.050"
 }

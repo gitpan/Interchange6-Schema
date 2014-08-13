@@ -103,7 +103,7 @@ we make sure that the unique constraint on username works.
 =head2 active
 
   data_type: 'boolean'
-  default_value: true
+  default_value: 1
   is_nullable: 0
 
 =cut
@@ -146,16 +146,8 @@ __PACKAGE__->add_columns(
   "last_modified",
   { data_type => "datetime", set_on_create => 1, set_on_update => 1, is_nullable => 0 },
   "active",
-  { data_type => "boolean", default_value => \"true", is_nullable => 0 },
+  { data_type => "boolean", default_value => 1, is_nullable => 0 },
 );
-
-__PACKAGE__->filter_column( username => {
-    filter_to_storage => sub {lc($_[1])},
-});
-
-=head1 METHODS
-
-Attribute methods are provided by the L<Interchange6::Schema::Base::Attribute> class.
 
 =head1 PRIMARY KEY
 
@@ -281,5 +273,118 @@ Composing rels: L</user_roles> -> role
 =cut
 
 __PACKAGE__->many_to_many("roles", "user_roles", "role");
+
+=head2 approvals
+
+Type: has_many
+
+Related object: L<Interchange6::Schema::Result::Message> FK C<approved_by>
+
+=cut
+
+__PACKAGE__->has_many(
+  "approvals",
+  "Interchange6::Schema::Result::Message",
+  { 'foreign.approved_by' => 'self.users_id' },
+);
+
+=head2 messages
+
+Type: has_many
+
+Related object: L<Interchange6::Schema::Result::Message> FK C<author>
+
+=cut
+
+__PACKAGE__->has_many(
+  "messages",
+  "Interchange6::Schema::Result::Message",
+  { 'foreign.author' => 'self.users_id' },
+);
+
+=head1 METHODS
+
+Attribute methods are provided by the L<Interchange6::Schema::Base::Attribute> class.
+
+=head2 new
+
+Overloaded method. Die if username is undef, empty string or not lowercase.
+
+=cut
+
+sub new {
+    my ( $class, $attrs ) = @_;
+
+    # should have the same checks in update
+    die "username cannot be undef" unless defined $attrs->{username};
+    die "username cannot be empty string" if $attrs->{username} eq '';
+    die "username must be lowercase"
+      if $attrs->{username} ne lc($attrs->{username});
+
+    my $new = $class->next::method($attrs);
+    return $new;
+}
+
+=head2 update
+
+Overloaded method. Throw exception if username is undef, empty string or not lowercase.
+
+=cut
+
+sub update {
+    my ( $self, $upd ) = @_;
+
+    my $username;
+
+    # username may have been passed as arg or previously set
+
+    if ( exists $upd->{username} ) {
+        $username = $upd->{username};
+    }
+    else {
+        my %data = $self->get_dirty_columns;
+        $username = $data{username} if exists $data{username};
+    }
+
+    # should have the same checks in new
+    if ( $username ) {
+
+        $self->throw_exception("username cannot be undef")
+          unless defined $username;
+
+        $self->throw_exception("username cannot be empty string")
+          if $username eq '';
+
+        $self->throw_exception("username must be lowercase")
+          if $username ne lc($username);
+
+    }
+
+    return $self->next::method($upd);
+}
+
+=head2 blog_posts
+
+Returns resultset of messages that are blog posts (Message->type eq 'blog_post')
+
+=cut
+
+sub blog_posts {
+    my $self = shift;
+    return $self->messages->search({ type => 'blog_post' });
+}
+
+=head2 reviews
+
+Returns resultset of messages that are reviews (referenced by ProductReview class).
+
+=cut
+
+sub reviews {
+    my $self = shift;
+    return $self->messages->search({},
+        { join =>'product_review' }
+    );
+}
 
 1;

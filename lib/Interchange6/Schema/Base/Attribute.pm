@@ -12,8 +12,10 @@ use warnings;
 
 =head1 DESCRIPTION
 
-This Base class in intended to be added to classes that require attributes
-examples of these classes include User, Navigation and Product.
+The Attribute base class is consumed by classes with attribute
+relationships like L<Interchange6::Schema::Result::User>,
+L<Interchange6::Schema::Result::Navigation>
+and L<Interchange6::Schema::Result::Product>.
 
 =over 4
 
@@ -40,7 +42,7 @@ keys.  In general follow the example classes listed in description.
 
 Add attribute.
 
-$base->add_attribute('hair_color', 'blond');
+    $base->add_attribute('hair_color', 'blond');
 
 Where 'hair_color' is Attribute and 'blond' is AttributeValue
 
@@ -67,7 +69,7 @@ sub add_attribute {
 
 Update base attribute value
 
-$base->update_attribute('hair_color', 'brown');
+    $base->update_attribute('hair_color', 'brown');
 
 =cut
 
@@ -88,7 +90,7 @@ sub update_attribute_value {
 
 Delete $base attribute
 
-$base->delete_attribute('hair_color', 'purple');
+    $base->delete_attribute('hair_color', 'purple');
 
 =cut
 
@@ -109,19 +111,27 @@ sub delete_attribute {
 
 =head2 search_attributes
 
-Returns attributes for a $base object
+Returns attributes resultset for a $base object
 
-my $attr_rs = shop_product->find('WBA0001')->search_attributes;
+    $rs = $base->search_attributes;
+
+You can pass conditions and attributes to the search like for
+any L<DBIx::Class::ResultSet>, e.g.:
+
+    $rs = $base->search_attributes(
+        undef, { order_by => 'priority desc' });
 
 =cut
 
 sub search_attributes {
-    my ($self) = @_;
+    my ($self, $condition, $search_atts) = @_;
+
     my $base = $self->result_source->source_name;
 
     my $base_attributes = $self->search_related(lc($base) . '_attributes');
 
-    my $attributes = $base_attributes->search_related('attribute');
+    my $attributes = $base_attributes->search_related('attribute',
+                                                  $condition, $search_atts);
 
     return $attributes;
 }
@@ -130,9 +140,9 @@ sub search_attributes {
 
 Finds the attribute value for the current object or a defined object value.
 If $object is passed the entire attribute_value object will be returned. $args can
-accept both scaler and hash inputs.
+accept both scalar and hash inputs.
 
-$base->find_attribute_value({name => $attr_name, priority => $attr_priority}, {object => 1});
+    $base->find_attribute_value({name => $attr_name, priority => $attr_priority}, {object => 1});
 
 =cut
 
@@ -151,7 +161,7 @@ sub find_attribute_value {
     my $attribute = $self->result_source->schema->resultset('Attribute')->find( \%attr );
 
     unless ($attribute) {
-        return;
+        return undef;
     }
 
     # find records
@@ -159,13 +169,13 @@ sub find_attribute_value {
                                             {attributes_id => $attribute->id});
 
     unless ($base_attribute) {
-        return;
+        return undef;
     }
 
     my $base_attribute_value = $base_attribute->find_related($lc_base .'_attribute_values',
                                             {$lc_base . '_attributes_id' => $base_attribute->id});
     unless ($base_attribute_value) {
-        return;
+        return undef;
     }
 
     my $attribute_value = $base_attribute_value->find_related('attribute_value',

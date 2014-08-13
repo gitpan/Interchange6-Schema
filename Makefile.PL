@@ -14,15 +14,18 @@ WriteMakefile(
     PL_FILES            => {},
     EXE_FILES           => ['bin/interchange6-create-database'],
     BUILD_REQUIRES => {
-                       'Test::MockTime' => 0.12,
+                       'Data::Dumper::Concise' => 0,
+                       'Test::MockDateTime' => 0.02,
                        'Test::More' => 0,
                        'Test::Most' => 0.33,
+                       'Test::Roo'  => 1.003,
                        'Test::Warnings' => 0,
                        'DBD::SQLite' => 1.38_01,
                        'File::Slurp' => 0,
                        'DBICx::TestDatabase' => 0,
                        'Locale::Country' => 0,
                        'Try::Tiny' => 0,
+                       'Number::Format' => 0,
                       },
     PREREQ_PM => {
                   'Crypt::Eksblowfish::Bcrypt' => 0,
@@ -34,6 +37,7 @@ WriteMakefile(
                   'MooX::HandlesVia' => 0.001005,
                   'MooX::Types::MooseLike' => 0.25,
                   'SQL::Translator' => 0.11016,
+                  'Sub::Quote' => 1.004006,
                   # for populating country/state records
                   'Locale::SubCountry' => 1.62,
                   'DateTime' => 0,

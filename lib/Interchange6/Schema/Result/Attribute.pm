@@ -41,6 +41,7 @@ Attribute type.
   data_type: 'varchar'
   default_value: (empty string)
   is_nullable: 0
+  size: 255
 
 =head2 title
 
@@ -49,13 +50,14 @@ Displayed title for attribute name, e.g. Color or Size.
   data_type: 'varchar'
   default_value: (empty string)
   is_nullable: 0
+  size: 255
 
 =head2 dynamic
 
 Flag to designate the attribute as being dynamic.
 
   data_type: 'boolean'
-  default_value: false
+  default_value: 0
   is_nullable: 0
 
 =head2 priority
@@ -78,11 +80,11 @@ __PACKAGE__->add_columns(
   "name",
   { data_type => "varchar", is_nullable => 0, size => 255 },
   "type",
-  { data_type => "text", default_value => "", is_nullable => 0 },
+  { data_type => "varchar", size => 255, default_value => "", is_nullable => 0 },
   "title",
-  { data_type => "text", default_value => "", is_nullable => 0 },
+  { data_type => "varchar", size => 255, default_value => "", is_nullable => 0 },
   "dynamic",
-  { data_type => "boolean", default_value => \"false", is_nullable => 0 },
+  { data_type => "boolean", default_value => 0, is_nullable => 0 },
   "priority",
   { data_type => "integer", default_value => 0, is_nullable => 0 },
 );
