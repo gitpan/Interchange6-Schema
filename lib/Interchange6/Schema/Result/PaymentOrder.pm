@@ -20,6 +20,17 @@ __PACKAGE__->load_components(qw(InflateColumn::DateTime TimeStamp));
 
 __PACKAGE__->table("payment_orders");
 
+=head1 DESCRIPTION
+
+The C<payment_sessions_id> is used to store the session id provided by the gateway.
+For example, with L<Business::OnlinePayment::IPayment> you put the session id into
+the HTML form for the silent CGI mode.
+
+The C<sessions_id> is used here so we can track down payments without orders.
+We usually turn a guest user into a real user after confirmation of a successful payment,
+so we need the session information here in the case the payment is made but
+the confirmation didn't reach the online shop.
+
 =head1 ACCESSORS
 
 =head2 payment_orders_id
@@ -67,7 +78,7 @@ __PACKAGE__->table("payment_orders");
 
   data_type: 'varchar'
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
   size: 255
 
 =head2 orders_id
@@ -153,7 +164,7 @@ __PACKAGE__->add_columns(
   "users_id",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "sessions_id",
-  { data_type => "varchar", is_foreign_key => 1, is_nullable => 0, size => 255 },
+  { data_type => "varchar", is_foreign_key => 1, is_nullable => 1, size => 255 },
   "orders_id",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1  },
   "amount",
@@ -232,13 +243,13 @@ __PACKAGE__->belongs_to(
 
 =head2 session
 
-Type: belongs_to
+Type: might_have
 
 Related object: L<Interchange6::Schema::Result::Session>
 
 =cut
 
-__PACKAGE__->belongs_to(
+__PACKAGE__->might_have(
   "session",
   "Interchange6::Schema::Result::Session",
   { sessions_id => "sessions_id" },

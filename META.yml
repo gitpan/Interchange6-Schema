@@ -4,11 +4,8 @@ author:
   - 'Stefan Hornburg (Racke) <racke@linuxia.de>'
 build_requires:
   DBD::SQLite: '1.3801'
-  DBICx::TestDatabase: '0'
   Data::Dumper::Concise: '0'
   File::Slurp: '0'
-  Locale::Country: '0'
-  Number::Format: '0'
   Test::MockDateTime: '0.02'
   Test::More: '0'
   Test::Most: '0.33'
@@ -46,4 +43,4 @@ requires:
 resources:
   bugtracker: https://github.com/interchange/interchange6-schema/issues
   repository: https://github.com/interchange/interchange6-schema.git
-version: '0.050'
+version: '0.051'
