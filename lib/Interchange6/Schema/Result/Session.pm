@@ -99,16 +99,8 @@ Related object: L<Interchange6::Schema::Result::PaymentOrder>
 __PACKAGE__->has_many(
   "payment_orders",
   "Interchange6::Schema::Result::PaymentOrder",
-  { "foreign.sessions_id" => "self.sessions_id" },
+  "sessions_id",
   { cascade_copy => 0, cascade_delete => 0 },
 );
-
-=head1 RESULTSET
-
-=head2 L<Interchange6::Schema::ResultSet::Session>
-
-=cut
-
-__PACKAGE__->resultset_class('Interchange6::Schema::ResultSet::Session');
 
 1;
