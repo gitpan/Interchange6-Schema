@@ -44,4 +44,4 @@ resources:
   IRC: irc://irc.freenode.net/#interchange
   bugtracker: https://github.com/interchange/interchange6-schema/issues
   repository: https://github.com/interchange/interchange6-schema.git
-version: '0.052'
+version: '0.053'

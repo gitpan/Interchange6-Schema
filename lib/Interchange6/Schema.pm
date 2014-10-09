@@ -9,11 +9,11 @@ Interchange6::Schema - Database Schema for Interchange 6
 
 =head1 VERSION
 
-0.052
+0.053
 
 =cut
 
-our $VERSION = '0.052';
+our $VERSION = '0.053';
 
 =head1 DESCRIPTION
 
@@ -299,20 +299,6 @@ use strict;
 use warnings;
 
 use base 'DBIx::Class::Schema';
-
-# overload _map_namespaces so we can remove junk classes that might have
-# been installed in a previous version but are no longer used
-
-sub _map_namespaces {
-  my $self = shift;
- 
-  my $res = $self->next::method(@_);
-
-  # Review renamed to ProductReview at 0.050
-  delete $res->{Review};
-
-  return $res;
-}
 
 __PACKAGE__->load_namespaces;
 
