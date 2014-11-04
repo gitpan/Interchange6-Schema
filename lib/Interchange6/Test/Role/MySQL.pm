@@ -1,17 +1,40 @@
-package Role::MySQL;
+package Interchange6::Test::Role::MySQL;
 
-use Test::More;
+=head1 NAME
+
+Interchange6::Test::Role::MySQL
+
+=cut
+
+use Class::Load qw/try_load_class/;
 use Test::Roo::Role;
-with 'Role::Database';
+with 'Interchange6::Test::Role::Database';
 
-eval "use DateTime::Format::MySQL";
-plan skip_all => "DateTime::Format::MySQL required" if $@;
+=head1 METHODS
 
-eval "use DBD::mysql";
-plan skip_all => "DBD::mysql required" if $@;
+See also L<Interchange6::Test::Role::Database> which is consumed by this role.
 
-eval "use Test::mysqld";
-plan skip_all => "Test::mysqld required" if $@;
+=head2 BUILD
+
+Check that all required modules load or else plan skip_all
+
+=cut
+
+sub BUILD {
+    my $self = shift;
+
+    try_load_class('DateTime::Format::MySQL')
+      or plan skip_all => "DateTime::Format::MySQL required to run these tests";
+
+    try_load_class('DBD::mysql')
+      or plan skip_all => "DBD::mysql required to run these tests";
+
+    try_load_class('Test::mysqld')
+      or plan skip_all => "Test::mysqld required to run these tests";
+
+    eval { $self->database }
+      or plan skip_all => "Init database failed: $@";
+}
 
 sub _build_database {
     my $self = shift;
@@ -22,7 +45,7 @@ sub _build_database {
             'collation-server'     => 'utf8_unicode_ci',
             'skip-networking'      => '',
         }
-    ) or plan skip_all =>  $Test::mysqld::errstr;
+    ) or die $Test::mysqld::errstr;
     return $mysqld;
 }
 
@@ -34,11 +57,21 @@ sub _build_dbd_version {
       . $self->schema->storage->dbh->{mysql_clientversion};
 }
 
+=head2 connect_info
+
+Returns appropriate DBI connect info for this role.
+
+=cut
+
 sub connect_info {
     my $self = shift;
-    return ( $self->database->dsn( dbname => 'test' ),
-        undef, undef,
-        { mysql_enable_utf8 => 1, on_connect_call => 'set_strict_mode' } );
+    return ( $self->database->dsn( dbname => 'test' ), undef, undef,
+        {
+            mysql_enable_utf8 => 1,
+            on_connect_call   => 'set_strict_mode',
+            quote_names       => 1,
+        }
+    );
 }
 
 sub _build_database_info {

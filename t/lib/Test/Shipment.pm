@@ -1,6 +1,6 @@
 package Test::Shipment;
 
-use Test::Most;
+use Test::Exception;
 use Test::Roo::Role;
 
 use DateTime;
@@ -89,9 +89,8 @@ test 'shipment tests' => sub {
     my $shipment_rate = $schema->resultset("ShipmentRate")
       ->find( { shipment_methods_id => $shipment_method->id } );
 
-    # stupid SQLite fp error due to price being float instead of numeric
-    # causes occasional failures so just rond price :-(
-    cmp_ok( sprintf("%.2f", $shipment_rate->price), '==', 9.95,
+    # ugly use of sprintf as SQLite uses float for numeric which can break test
+    cmp_ok( sprintf("%.02f", $shipment_rate->price), '==', 9.95,
         "Testing flat rate shipping price for UPS Ground lower 48 states." );
 
     my ( $product, $order );

@@ -12,13 +12,14 @@ WriteMakefile(
       : ()),
     MIN_PERL_VERSION    => '5.014000',
     PL_FILES            => {},
-    EXE_FILES           => ['bin/interchange6-create-database'],
+    EXE_FILES           => ['bin/interchange6-create-schema-png',
+                            'bin/interchange6-create-database'],
     BUILD_REQUIRES => {
+                       'Class::Load' => 0,
                        'Data::Dumper::Concise' => 0,
-                       'Test::MockDateTime' => 0.02,
+                       'Test::MockTime' => 0,
                        'Test::More' => 0,
                        'Test::Most' => 0.33,
-                       'Test::Roo'  => 1.003,
                        'Test::Warnings' => 0,
                        'DBD::SQLite' => 1.38_01,
                        'File::Slurp' => 0,
@@ -27,6 +28,7 @@ WriteMakefile(
     PREREQ_PM => {
                   'Crypt::Eksblowfish::Bcrypt' => 0,
                   'DBIx::Class' => 0,
+                  'DBIx::Class::Candy' => 0.002104,
                   'DBIx::Class::EncodedColumn' => 0,
                   'DBIx::Class::InflateColumn::DateTime' => 0,
                   'DBIx::Class::TimeStamp' => 0,
@@ -38,6 +40,7 @@ WriteMakefile(
                   # for populating country/state records
                   'Locale::SubCountry' => 1.62,
                   'DateTime' => 0,
+                  'Test::Roo'  => 1.003,
                   'Time::Duration::Parse' => 0,
                  },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },

@@ -1,4 +1,5 @@
 use utf8;
+
 package Interchange6::Schema::Result::Role;
 
 =head1 NAME
@@ -7,16 +8,7 @@ Interchange6::Schema::Result::Role
 
 =cut
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-=head1 TABLE: C<roles>
-
-=cut
-
-__PACKAGE__->table("roles");
+use Interchange6::Schema::Candy;
 
 =head1 ACCESSORS
 
@@ -26,12 +18,27 @@ __PACKAGE__->table("roles");
   is_auto_increment: 1
   is_nullable: 0
   sequence: 'roles_roles_id_seq'
+  primary key
+
+=cut
+
+primary_column roles_id => {
+    data_type         => "integer",
+    is_auto_increment => 1,
+    is_nullable       => 0,
+    sequence          => "roles_roles_id_seq",
+};
 
 =head2 name
 
   data_type: 'varchar'
   is_nullable: 0
   size: 32
+  unique
+
+=cut
+
+unique_column name => { data_type => "varchar", is_nullable => 0, size => 32 };
 
 =head2 label
 
@@ -41,48 +48,31 @@ __PACKAGE__->table("roles");
 
 =cut
 
-__PACKAGE__->add_columns(
-  "roles_id",
-  {
-    data_type         => "integer",
-    is_auto_increment => 1,
-    is_nullable       => 0,
-    sequence          => "roles_roles_id_seq",
-  },
-  "name",
-  { data_type => "varchar", is_nullable => 0, size => 32 },
-  "label",
-  { data_type => "varchar", is_nullable => 0, size => 255 },
-);
+column label => { data_type => "varchar", is_nullable => 0, size => 255 };
 
-=head1 PRIMARY KEY
+=head2 description
 
-=over 4
-
-=item * L</roles_id>
-
-=back
+  data_type: text
+  is_nullable: 0
 
 =cut
 
-__PACKAGE__->set_primary_key("roles_id");
+column description => { data_type => "text", is_nullable => 0 };
 
 =head1 RELATIONS
 
-=head2 group_pricing
+=head2 price_modifiers
 
 Type: has_many
 
-Related object: L<Interchange6::Schema::Result::GroupPricing>
+Related object: L<Interchange6::Schema::Result::PriceModifier>
 
 =cut
 
-__PACKAGE__->has_many(
-  "group_pricing",
-  "Interchange6::Schema::Result::GroupPricing",
-  { "foreign.roles_id" => "self.roles_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
+has_many
+  price_modifiers => "Interchange6::Schema::Result::PriceModifier",
+  "roles_id",
+  { cascade_copy => 0, cascade_delete => 0 };
 
 =head2 permissions
 
@@ -92,12 +82,10 @@ Related object: L<Interchange6::Schema::Result::Permission>
 
 =cut
 
-__PACKAGE__->has_many(
-  "permissions",
-  "Interchange6::Schema::Result::Permission",
-  { "foreign.roles_id" => "self.roles_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
+has_many
+  permissions => "Interchange6::Schema::Result::Permission",
+  "roles_id",
+  { cascade_copy => 0, cascade_delete => 0 };
 
 =head2 user_roles
 
@@ -107,12 +95,10 @@ Related object: L<Interchange6::Schema::Result::UserRole>
 
 =cut
 
-__PACKAGE__->has_many(
-  "user_roles",
-  "Interchange6::Schema::Result::UserRole",
-  { "foreign.roles_id" => "self.roles_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
+has_many
+  user_roles => "Interchange6::Schema::Result::UserRole",
+  "roles_id",
+  { cascade_copy => 0, cascade_delete => 0 };
 
 =head2 users
 
@@ -122,6 +108,6 @@ Composing rels: L</user_roles> -> user
 
 =cut
 
-__PACKAGE__->many_to_many("users", "user_roles", "user");
+many_to_many users => "user_roles", "user";
 
 1;

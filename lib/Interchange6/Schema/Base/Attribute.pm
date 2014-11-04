@@ -188,6 +188,53 @@ sub find_attribute_value {
     }
 };
 
+=head2 search_attribute_values
+
+=over 4
+
+=item Arguments: L<$cond|DBIx::Class::SQLMaker> | undef, L<\%attrs|DBIx::Class::ResultSet/ATTRIBUTES> | undef, L<\%av_attrs|DBIx::Class::ResultSet/ATTRIBUTES>
+
+Where $cond and %attrs are passed to the Attribute search and %av_attrs is passed to the AttributeValue search.
+
+=item Return Value: Array (or arrayref in scalar context) of attributes and values for for the $base object input.
+
+=back
+
+    my $product = $schema->resultset('Product')->find({ sku = '123' });
+    my $av = $product->search_attribute_values(
+        undef, { order_by => 'priority' }, { order_by => 'priority' });
+
+=cut
+
+sub search_attribute_values {
+    my ($self, $condition, $search_atts, $av_search_atts) = @_;
+    my $base = $self->result_source->source_name; 
+    my (%base_data, %attr_values, @data);
+
+    my $base_attributes = $self->search_related(lc($base) . '_attributes');
+
+    my $attributes_rs = $base_attributes->search_related('attribute',
+                                                  $condition, $search_atts);
+
+    while (my $attribute = $attributes_rs->next) {
+        my @values;
+        my $attribute_value_rs = $attribute->search_related('attribute_values',
+            undef, $av_search_atts);
+        while (my $attribute_value = $attribute_value_rs->next) {
+
+            # get key value pairs
+            my %attr_values = $attribute_value->get_columns;
+            push( @values, { %attr_values });
+        }
+        my %base_data = $attribute->get_columns;
+
+        # populate values
+        $base_data{attribute_values} = \@values;
+        push( @data, { %base_data });
+    }
+    return wantarray ? @data : \@data;
+};
+
 =head2 find_or_create_attribute
 
 Find or create attribute and attribute_value.

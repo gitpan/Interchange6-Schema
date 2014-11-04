@@ -3,6 +3,7 @@
 use File::Spec;
 use Module::Find;
 use Test::Roo;
+use Test::MockTime;
 
 use lib File::Spec->catdir( 't', 'lib' );
 my @test_roles;
@@ -23,7 +24,7 @@ else {
 
 diag "with " . join(" ", @test_roles);
 
-with 'Role::Fixtures', 'Role::SQLite', @test_roles;
+with 'Interchange6::Test::Role::Fixtures', 'Interchange6::Test::Role::SQLite', @test_roles;
 
 run_me;
 

@@ -6,14 +6,16 @@ use Test::Roo::Role;
 # NOTE: make sure new fixtures are add to this hash
 
 my %classes = (
-    Address   => 'addresses',
-    Attribute => 'attributes',
-    Country   => 'countries',
-    Product   => 'products',
-    State     => 'states',
-    Tax       => 'taxes',
-    User      => 'users',
-    Zone      => 'zones',
+    Address       => 'addresses',
+    Attribute     => 'attributes',
+    Country       => 'countries',
+    Product       => 'products',
+    Role          => 'roles',
+    PriceModifier => 'price_modifiers',
+    State         => 'states',
+    Tax           => 'taxes',
+    User          => 'users',
+    Zone          => 'zones',
 );
 
 # NOTE: do not place any tests before the following test
@@ -24,18 +26,42 @@ test 'initial environment' => sub {
 
     my $self = shift;
 
-    foreach my $class ( sort keys %classes ) {
-        cmp_ok( $self->schema->resultset($class)->count,
-            '==', 0, "0 rows in $class" );
+    cmp_ok( $self->schema->resultset('Address')->count, '==', 0,
+        "no addresses" );
 
-        my $has = "has_$classes{$class}";
-        ok( !$self->$has, "$has is false" );
+    cmp_ok( $self->schema->resultset('Attribute')->count, '==', 0,
+        "no attributes" );
+
+    cmp_ok( $self->schema->resultset('Country')->count, '>=', 250,
+        "at least 250 countries" );
+
+    cmp_ok( $self->schema->resultset('Product')->count, '==', 0,
+        "no products" );
+
+    cmp_ok( $self->schema->resultset('Role')->count, '==', 3, "3 roles" );
+
+    cmp_ok( $self->schema->resultset('State')->count, '>=', 64,
+        "at least 64 states" );
+
+    cmp_ok( $self->schema->resultset('Tax')->count, '==', 0, "0 taxes" );
+
+    cmp_ok( $self->schema->resultset('User')->count, '==', 0, "no users" );
+
+    cmp_ok( $self->schema->resultset('Zone')->count, '==', 317,
+        "at least 317 zones" );
+
+    foreach my $class ( sort keys %classes ) {
+        my $predicate = "has_$classes{$class}";
+        ok( !$self->$predicate, "$predicate is false" );
     }
 };
 
 test 'countries' => sub {
     my $self   = shift;
     my $schema = $self->schema;
+
+    # loaded on $schema->deploy so clear before testing
+    lives_ok( sub { $self->clear_countries }, "clear_countries" );
 
     cmp_ok( $self->countries->count, '>=', 250, "at least 250 countries" );
 
@@ -48,6 +74,9 @@ test 'countries' => sub {
 test 'states' => sub {
     my $self   = shift;
     my $schema = $self->schema;
+
+    # loaded on $schema->deploy so clear before testing
+    lives_ok( sub { $self->clear_states }, "clear_states" );
 
     cmp_ok( $self->states->count, '>=', 64, "at least 64 states" );
 
@@ -116,6 +145,24 @@ test 'taxes' => sub {
 
 };
 
+test 'price modifiers' => sub {
+    my $self   = shift;
+    my $schema = $self->schema;
+
+    cmp_ok( $self->price_modifiers->count, '==', 15, "15 price_modifiers" );
+
+    ok( $self->has_price_modifiers, "has_price_modifiers is true" );
+};
+
+test 'roles' => sub {
+    my $self   = shift;
+    my $schema = $self->schema;
+
+    cmp_ok( $self->roles->count, '==', 7, "7 roles" );
+
+    ok( $self->has_roles, "has_roles is true" );
+};
+
 test 'zones' => sub {
     my $self   = shift;
     my $schema = $self->schema;
@@ -149,44 +196,69 @@ test 'attributes' => sub {
     my $self   = shift;
     my $schema = $self->schema;
 
-    cmp_ok( $self->attributes->count, '==', 3, "3 attributes" );
+    cmp_ok( $self->attributes->count, '==', 4, "4 attributes" );
 
     ok( $self->has_attributes, "has_attributes is true" );
 
     cmp_ok( $schema->resultset('Attribute')->count,
-        '==', 3, "3 Attributes in DB" );
+        '==', 4, "4 Attributes in DB" );
 };
 
 test 'products' => sub {
     my $self   = shift;
     my $schema = $self->schema;
 
-    my $product;
+    my ( $rset, $product );
 
-    cmp_ok( $self->products->count, '==', 6, "6 products" );
+    cmp_ok( $self->products->count, '==', 51, "51 products" );
 
     ok( $self->has_products,   "has_products is true" );
     ok( $self->has_attributes, "has_attributes is true" );
 
     lives_ok(
         sub {
-            $product = $self->products->search(
-                {
-                    canonical_sku => undef
-                },
-                { rows => 1 }
-            )->single;
+            $rset = $self->products->search( { canonical_sku => undef }, );
         },
-        "select canonical product"
+        "select canonical products"
     );
 
-    cmp_ok( $product->variants->count, '==', 5, "5 product variants" );
+    cmp_ok( $rset->count, '==', 39, "39 canonical variants" );
 
     cmp_ok( $schema->resultset('AttributeValue')->count,
-        '==', 11, "11 AttributeValues" );
+        '==', 10, "10 AttributeValues" );
 
     cmp_ok( $schema->resultset('ProductAttribute')->count,
-        '==', 10, "10 ProductAttributes" );
+        '==', 24, "24 ProductAttributes" );
+
+    lives_ok( sub { $product = $self->products->find('os28066') },
+        "find sku os28066" );
+
+    cmp_ok( $product->reviews->count, '==', 9, "9 reviews in total" );
+    cmp_ok( $product->reviews( { public => 1 } )->count,
+        '==', 7, "7 public reviews" );
+    cmp_ok( $product->reviews( { approved => 1 } )->count,
+        '==', 7, "7 approved reviews" );
+    cmp_ok( $product->reviews( { approved => 1, public => 1 } )->count,
+        '==', 6, "6 approved and public reviews" );
+
+    cmp_ok( $product->average_rating, "==", 4.25, "average rating is 4.25" );
+
+    lives_ok( sub { $rset = $product->top_reviews }, "get top reviews" );
+
+    cmp_ok( $rset->count, '==', 5, "got 5 reviews" );
+    cmp_ok( $rset->next->rating, '==', 5, "top rating is 5" );
+
+    lives_ok( sub { $rset = $product->top_reviews(3) }, "get top 3 reviews" );
+
+    cmp_ok( $rset->count, '==', 3, "got 3 reviews" );
+    cmp_ok( $rset->next->rating, '==', 5, "top rating is 5" );
+};
+
+test 'inventory' => sub {
+    my $self   = shift;
+    my $schema = $self->schema;
+
+    cmp_ok( $self->inventory->count, "==", 39, "39 products in inventory" );
 };
 
 test 'addresses' => sub {
