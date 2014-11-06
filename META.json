@@ -26,6 +26,7 @@
             "DBD::SQLite" : "1.3801",
             "Data::Dumper::Concise" : "0",
             "File::Slurp" : "0",
+            "File::Temp" : "0",
             "Test::MockTime" : "0",
             "Test::More" : "0",
             "Test::Most" : "0.33",
@@ -69,5 +70,5 @@
       },
       "x_IRC" : "irc://irc.freenode.net/#interchange"
    },
-   "version" : "0.060_01"
+   "version" : "0.060_02"
 }

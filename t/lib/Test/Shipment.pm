@@ -13,7 +13,7 @@ test 'shipment tests' => sub {
 
     my ( $rset, %countries, %states, %zones, $data, $result );
 
-    my $schema = $self->schema;
+    my $schema = $self->ic6s_schema;
 
     # grab a few things from fixtures
 
@@ -131,7 +131,7 @@ test 'shipment tests' => sub {
         "Create order IC60001"
     );
 
-    my $orderline = $order->find_related( 'orderlines', '1' );
+    my $orderline = $order->orderlines->first;
 
     cmp_ok( $orderline->sku, 'eq', $product->sku,
         "Testing Orderline record creation." );
