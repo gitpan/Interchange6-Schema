@@ -288,25 +288,25 @@ many_to_many roles => "user_roles", "role";
 
 Type: has_many
 
-Related object: L<Interchange6::Schema::Result::Message> FK C<approved_by>
+Related object: L<Interchange6::Schema::Result::Message> FK C<approved_by_users_id>
 
 =cut
 
 has_many
   approvals => "Interchange6::Schema::Result::Message",
-  { 'foreign.approved_by' => 'self.users_id' };
+  { 'foreign.approved_by_users_id' => 'self.users_id' };
 
 =head2 messages
 
 Type: has_many
 
-Related object: L<Interchange6::Schema::Result::Message> FK C<author>
+Related object: L<Interchange6::Schema::Result::Message> FK C<author_users_id>
 
 =cut
 
 has_many
   messages => "Interchange6::Schema::Result::Message",
-  { 'foreign.author' => 'self.users_id' };
+  { 'foreign.author_users_id' => 'self.users_id' };
 
 =head1 METHODS
 
@@ -378,6 +378,17 @@ Returns resultset of messages that are blog posts (Message->type eq 'blog_post')
 sub blog_posts {
     my $self = shift;
     return $self->messages->search( { type => 'blog_post' } );
+}
+
+=head2 name
+
+Returns L</first_name> and L</last_name> joined by a single space.
+
+=cut
+
+sub name {
+    my $self = shift;
+    return $self->first_name . " " . $self->last_name;
 }
 
 =head2 reviews

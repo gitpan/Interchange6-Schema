@@ -27,6 +27,8 @@ primary_column sku =>
 
 =head2 quantity
 
+This is the quantity currently held in stock.
+
   data_type: 'integer'
   default_value: 0
   is_nullable: 0
