@@ -20,8 +20,9 @@ use Moo::Role;
 # clear_all_fixtures needs to receive them so that there are no FK issues in
 # the database during row deletion
 
-my @accessors =
-  qw(orders addresses taxes zones states countries navigation roles price_modifiers inventory media products attributes users message_types);
+my @accessors = qw(orders addresses shipment_rates taxes zones states
+  countries navigation price_modifiers roles inventory media products
+  attributes users message_types shipment_carriers);
 
 # Create all of the accessors and clearers. Builders should be defined later.
 
@@ -33,6 +34,7 @@ foreach my $accessor (@accessors) {
     );
 
     next if $accessor eq 'media';       # see below
+    next if $accessor eq 'orders';      # see below
     next if $accessor eq 'products';    # see below
 
     my $cref = q{
@@ -55,6 +57,16 @@ sub clear_media {
     $schema->resultset('MediaType')->delete;
 
     $self->_clear_media;
+}
+
+sub clear_orders {
+    my $self = shift;
+    my $schema = $self->ic6s_schema;
+    $schema->resultset('OrderlinesShipping')->delete;
+    $schema->resultset('Shipment')->delete;
+    $schema->resultset('Orderline')->delete;
+    $schema->resultset('Order')->delete;
+    $self->_clear_orders;
 }
 
 sub clear_products {
@@ -190,7 +202,6 @@ sub _build_roles {
     # Add a few additional roles
     scalar $rset->populate(
         [
-            { name => 'user', label => 'User', description => 'Basic User' },
             { name => 'editor', label => 'Editor', description => 'Editor' },
             { name => 'wholesale', label => 'Wholesale customer', description => 'Wholesale Customer.' },
             { name => 'trade', label => 'Trade customer', description => 'Trade Customer.' },
@@ -207,11 +218,13 @@ sub _build_orders {
     my $self = shift;
     my $schema = $self->ic6s_schema;
 
+    # prereqs
+    $self->products unless $self->has_products;
+    $self->addresses unless $self->has_addresses;
+
     my $rset =  $schema->resultset('Order');
 
-    my $customer1 =
-      $self->users->search( { username => 'customer1' }, { rows => 1 } )
-      ->single;
+    my $customer1 = $self->users->find( { username => 'customer1' } );
 
     my $billing_address =
       $customer1->addresses->search( { type => 'billing' }, { rows => 1 } )
@@ -261,6 +274,116 @@ sub _build_orders {
         }
     );
 
+    my $customer2 = $self->users->find( { username => 'customer2' });
+
+    $billing_address =
+      $customer2->addresses->search( { type => 'billing' }, { rows => 1 } )
+      ->single;
+
+    $shipping_address =
+      $customer2->addresses->search( { type => 'shipping' }, { rows => 1 } )
+      ->single;
+
+    $payment_order = {
+        users_id => $customer2->id,
+        amount   => 56.47,
+    };
+
+    $rset->create(
+        {
+            order_number          => '122339',
+            order_date            => DateTime->now,
+            users_id              => $customer2->id,
+            email                 => $customer2->email,
+            shipping_addresses_id => $shipping_address->id,
+            billing_addresses_id  => $billing_address->id,
+            orderlines            => \@orderlines,
+            subtotal              => 43.97,
+            shipping              => 12.50,
+            total_cost            => 56.47,
+            payment_orders        => [$payment_order],
+        }
+    );
+
+    return $rset;
+}
+
+=head2 shipment_carriers
+
+=cut
+
+sub _build_shipment_carriers {
+    my $self = shift;
+    my $rset = $self->ic6s_schema->resultset('ShipmentCarrier');
+
+    $rset->create(
+        {
+            name             => 'UPS',
+            account_number   => '1U99999',
+            shipment_methods => [
+                {
+                    name       => '1DM',
+                    title      => 'Next Day Air Early AM',
+                    max_weight => '150',
+
+                },
+                {
+                    name       => 'GNDRES',
+                    title      => 'Ground Residential',
+                    max_weight => '150',
+                }
+            ]
+        }
+    );
+    $rset->create(
+        {
+            name             => 'KISS',
+            account_number   => '1K99999',
+            shipment_methods => [
+                {
+                    name       => 'KISSFAST',
+                    title      => 'Keep it Simple and Stupid',
+                    max_weight => '60',
+                },
+            ]
+        }
+    );
+    return $rset;
+}
+
+=head2 shipment_rates
+
+=cut
+
+sub _build_shipment_rates {
+    my $self   = shift;
+    my $schema = $self->ic6s_schema;
+    my $rset   = $schema->resultset('ShipmentRate');
+
+    # prereqs
+    $self->shipment_carriers unless $self->has_shipment_carriers;
+    $self->zones unless $self->has_zones;
+
+    $rset->create(
+        {
+            zones_id => $self->zones->find( { zone => 'US lower 48' } )->id,
+            shipment_methods_id => $schema->resultset('ShipmentMethod')
+              ->search( { name => 'GNDRES' }, { rows => 1 } )->single->id,
+            min_weight => 0,
+            max_weight => 0,
+            price      => 9.95,
+        },
+    );
+    $rset->create(
+        {
+            zones_id => $self->zones->find( { zone => 'US lower 48' } )->id,
+            shipment_methods_id => $schema->resultset('ShipmentMethod')
+              ->search( { name => '1DM' }, { rows => 1 } )->single->id,
+            min_weight => 0,
+            max_weight => 0,
+            price      => 29.95,
+        },
+    );
     return $rset;
 }
 
@@ -281,10 +404,8 @@ sub _build_price_modifiers {
 
     my $product = $self->products->find(
         { sku => 'G0001' });
-    my $role_anonymous = $self->roles->find(
-        { name => 'anonymous' });
-    my $role_authenticated = $self->roles->find(
-        { name => 'authenticated' });
+    my $role_user = $self->roles->find(
+        { name => 'user' });
     my $role_trade = $self->roles->find(
         { name => 'trade' });
     my $role_wholesale = $self->roles->find(
@@ -293,22 +414,22 @@ sub _build_price_modifiers {
     scalar $rset->populate(
         [
             [qw/sku quantity roles_id price start_date end_date/],
-            [ 'os28005', 10,  $role_anonymous->id,     8.49, undef, undef ],
-            [ 'os28005', 10,  $role_authenticated->id, 8.20, undef, undef ],
-            [ 'os28005', 20,  $role_authenticated->id, 8.00, undef, undef ],
-            [ 'os28005', 30,  $role_authenticated->id, 7.80, undef, undef ],
-            [ 'os28005', 1,   $role_trade->id,         8, undef, undef ],
-            [ 'os28005', 10,  $role_trade->id,         7.80, undef, undef ],
-            [ 'os28005', 20,  $role_trade->id,         7.50, undef, undef ],
-            [ 'os28005', 50,  $role_trade->id,         7, undef, undef ],
-            [ 'os28005', 1,   $role_wholesale->id,     7, undef, undef ],
-            [ 'os28005', 10,  $role_wholesale->id,     6.80, undef, undef ],
-            [ 'os28005', 20,  $role_wholesale->id,     6.70, undef, undef ],
-            [ 'os28005', 50,  $role_wholesale->id,     6.50,  undef, undef ],
-            [ 'os28005', 200, $role_wholesale->id,     6.10,  undef, undef ],
-            [ 'os28005', 1, $role_anonymous->id, 7.50, $start, $end ],
-            [ 'os28005', 1, $role_trade->id,     6.90,    $start, $end ],
-            [ 'os28006', 1,  $role_anonymous->id,     24.99, undef, undef ],
+            [ 'os28005', 10,  undef,               8.49,  undef,  undef ],
+            [ 'os28005', 10,  $role_user->id,      8.20,  undef,  undef ],
+            [ 'os28005', 20,  $role_user->id,      8.00,  undef,  undef ],
+            [ 'os28005', 30,  $role_user->id,      7.80,  undef,  undef ],
+            [ 'os28005', 1,   $role_trade->id,     8,     undef,  undef ],
+            [ 'os28005', 10,  $role_trade->id,     7.80,  undef,  undef ],
+            [ 'os28005', 20,  $role_trade->id,     7.50,  undef,  undef ],
+            [ 'os28005', 50,  $role_trade->id,     7,     undef,  undef ],
+            [ 'os28005', 1,   $role_wholesale->id, 7,     undef,  undef ],
+            [ 'os28005', 10,  $role_wholesale->id, 6.80,  undef,  undef ],
+            [ 'os28005', 20,  $role_wholesale->id, 6.70,  undef,  undef ],
+            [ 'os28005', 50,  $role_wholesale->id, 6.50,  undef,  undef ],
+            [ 'os28005', 200, $role_wholesale->id, 6.10,  undef,  undef ],
+            [ 'os28005', 1,   undef,               7.50,  $start, $end ],
+            [ 'os28005', 1,   $role_trade->id,     6.90,  $start, $end ],
+            [ 'os28006', 1,   undef,               24.99, undef,  undef ],
         ]
     );
     return $rset;
@@ -1037,8 +1158,8 @@ sub _build_attributes {
             type             => 'variant',
             priority         => 1,
             attribute_values => [
-                { priority => 10, value => '1.0 inch',   title => q(1") },
-                { priority => 15, value => '1.5 inch', title => q(1.5") },
+                { priority => 40, value => '1.0 inch',   title => q(1") },
+                { priority => 30, value => '1.5 inch', title => q(1.5") },
                 { priority => 20, value => '2.0 inch', title => q(2") },
             ]
         }
@@ -1050,11 +1171,11 @@ sub _build_attributes {
             type             => 'variant',
             priority         => 1,
             attribute_values => [
-                { priority => 1, value => '1/4 inch', title => q(1/4") },
-                { priority => 2, value => '1/2 inch', title => q(1/2") },
-                { priority => 3, value => '1 inch',   title => q(1") },
-                { priority => 7, value => '2 inches', title => q(2") },
-                { priority => 8, value => '3 inches', title => q(3") },
+                { priority => 80, value => '1/4 inch', title => q(1/4") },
+                { priority => 70, value => '1/2 inch', title => q(1/2") },
+                { priority => 60, value => '1 inch',   title => q(1") },
+                { priority => 50, value => '2 inches', title => q(2") },
+                { priority => 40, value => '3 inches', title => q(3") },
             ]
         }
     );
@@ -1065,15 +1186,15 @@ sub _build_attributes {
             type             => 'variant',
             priority         => 2,
             attribute_values => [
-                { priority => 20,  value => '2 foot',   title => "2'" },
-                { priority => 25,  value => '2.5 foot', title => "2.5'" },
-                { priority => 30,  value => '3 foot',   title => "3'" },
-                { priority => 60,  value => '6 foot',   title => "6'" },
-                { priority => 100, value => '10 foot',  title => "10'" },
-                { priority => 120, value => '12 foot',  title => "12'" },
-                { priority => 160, value => '16 foot',  title => "16'" },
-                { priority => 240, value => '24 foot',  title => "24'" },
-                { priority => 360, value => '36 foot',  title => "36'" },
+                { priority => 800,  value => '2 foot',   title => "2'" },
+                { priority => 750,  value => '2.5 foot', title => "2.5'" },
+                { priority => 700,  value => '3 foot',   title => "3'" },
+                { priority => 650,  value => '6 foot',   title => "6'" },
+                { priority => 600, value => '10 foot',  title => "10'" },
+                { priority => 550, value => '12 foot',  title => "12'" },
+                { priority => 500, value => '16 foot',  title => "16'" },
+                { priority => 450, value => '24 foot',  title => "24'" },
+                { priority => 400, value => '36 foot',  title => "36'" },
             ]
         }
     );
@@ -1084,13 +1205,13 @@ sub _build_attributes {
             type             => 'variant',
             priority         => 1,
             attribute_values => [
-                { priority => 20,  value => '2 foot',   title => "2'" },
-                { priority => 25,  value => '2.5 foot', title => "2.5'" },
-                { priority => 30,  value => '3 foot',   title => "3'" },
-                { priority => 100, value => '10 foot',  title => "10'" },
-                { priority => 160, value => '16 foot',  title => "16'" },
-                { priority => 240, value => '24 foot',  title => "24'" },
-                { priority => 360, value => '36 foot',  title => "36'" },
+                { priority => 80,  value => '2 foot',   title => "2'" },
+                { priority => 85,  value => '2.5 foot', title => "2.5'" },
+                { priority => 80,  value => '3 foot',   title => "3'" },
+                { priority => 75, value => '10 foot',  title => "10'" },
+                { priority => 70, value => '16 foot',  title => "16'" },
+                { priority => 65, value => '24 foot',  title => "24'" },
+                { priority => 60, value => '36 foot',  title => "36'" },
             ]
         }
     );
@@ -1291,16 +1412,22 @@ sub _build_navigation {
     my $self = shift;
     my $rset = $self->ic6s_schema->resultset('Navigation');
 
+    # we must have products before we can proceed
+    $self->products unless $self->has_products;
+
     scalar $rset->populate(
         [
             [ 'uri',        'type', 'scope',     'name',       'priority' ],
-            [ 'hand-tools', 'nav',  'menu-main', 'Hand Tools', 1 ],
-            [ 'hardware',   'nav',  'menu-main', 'Hardware',   2 ],
-            [ 'ladders',    'nav',  'menu-main', 'Ladders',    3 ],
-            [ 'measuring-tools',   'nav', 'menu-main', 'Measuring Tools',   4 ],
-            [ 'painting-supplies', 'nav', 'menu-main', 'Painting Supplies', 5 ],
-            [ 'safety-equipment',  'nav', 'menu-main', 'Safety Equipment',  6 ],
-            [ 'tool-storage',      'nav', 'menu-main', 'Tool Storage',      7 ],
+            [ 'hand-tools', 'nav',  'menu-main', 'Hand Tools', 90 ],
+            [ 'hardware',   'nav',  'menu-main', 'Hardware',   80 ],
+            [ 'ladders',    'nav',  'menu-main', 'Ladders',    70 ],
+            [ 'measuring-tools', 'nav', 'menu-main', 'Measuring Tools', 60 ],
+            [
+                'painting-supplies', 'nav', 'menu-main', 'Painting Supplies',
+                50
+            ],
+            [ 'safety-equipment', 'nav', 'menu-main', 'Safety Equipment', 40 ],
+            [ 'tool-storage',     'nav', 'menu-main', 'Tool Storage',     30 ],
         ]
     );
 
@@ -1442,7 +1569,7 @@ sub _build_navigation {
                 name      => $nav->[3],
                 parent_id => $nav->[4],
                 navigation_products =>
-                  [ map { { "sku" => $_ } } @{ $nav->[5] } ],
+                  [ map { { "sku" => $_, priority => 100 } } @{ $nav->[5] } ],
             }
         );
 
@@ -1584,6 +1711,10 @@ sub _build_taxes {
 sub _build_users {
     my $self    = shift;
     my $rset    = $self->ic6s_schema->resultset('User');
+
+    # we must have roles before we can proceed
+    $self->roles unless $self->has_roles;
+
     scalar $rset->populate(
         [
             [qw( username email password first_name last_name)],
@@ -1668,6 +1799,10 @@ All attributes have a corresponding C<clear_$attribute> method which deletes all
 
 =item * clear_roles
 
+=item * clear_shipment_carriers
+
+=item * clear_shipment_rates
+
 =item * clear_states
 
 =item * clear_taxes
@@ -1697,6 +1832,10 @@ All attributes have a corresponding C<clear_$attribute> method which deletes all
 =item * has_products
 
 =item * has_roles
+
+=item * has_shipment_carriers
+
+=item * has_shipment_rates
 
 =item * has_states
 

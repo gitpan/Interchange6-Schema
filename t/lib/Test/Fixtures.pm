@@ -17,6 +17,8 @@ my %classes = (
     PriceModifier => 'price_modifiers',
     Product       => 'products',
     Role          => 'roles',
+    ShipmentCarrier => 'shipment_carriers',
+    ShipmentRate  => 'shipment_rates',
     State         => 'states',
     Tax           => 'taxes',
     User          => 'users',
@@ -67,7 +69,13 @@ test 'initial environment' => sub {
     cmp_ok( $self->ic6s_schema->resultset('Product')->count, '==', 0,
         "no products" );
 
-    cmp_ok( $self->ic6s_schema->resultset('Role')->count, '==', 3, "3 roles" );
+    cmp_ok( $self->ic6s_schema->resultset('Role')->count, '==', 2, "2 roles" );
+
+    cmp_ok( $self->ic6s_schema->resultset('ShipmentMethod')->count, '==', 0,
+        "no shipment_methods" );
+
+    cmp_ok( $self->ic6s_schema->resultset('ShipmentCarrier')->count, '==', 0,
+        "no shipment_carriers" );
 
     cmp_ok( $self->ic6s_schema->resultset('State')->count, '>=', 64,
         "at least 64 states" );
@@ -205,7 +213,7 @@ test 'roles' => sub {
     my $self   = shift;
     my $schema = $self->ic6s_schema;
 
-    cmp_ok( $self->roles->count, '==', 7, "7 roles" );
+    cmp_ok( $self->roles->count, '==', 5, "5 roles" );
 
     ok( $self->has_roles, "has_roles is true" );
 };
@@ -350,9 +358,9 @@ test 'orders' => sub {
 
     my $order;
 
-    cmp_ok( $self->orders->count, '==', 1, "1 order" );
+    cmp_ok( $self->orders->count, '==', 2, "2 orders" );
 
-    lives_ok( sub { $order = $self->orders->first }, "grab order" );
+    lives_ok( sub { $order = $self->orders->first }, "grab an order" );
 
     cmp_ok( $order->orderlines->count, '==', 2, "2 orderlines" );
 
@@ -378,7 +386,7 @@ test 'navigation' => sub {
         sub {
             $navs = $self->navigation->search(
                 { type => 'nav', scope => 'menu-main', parent_id => undef },
-                { order_by => 'priority' } )
+                { order_by => { -desc => 'priority' } } );
         },
         "grab top-level menu-main items"
     );

@@ -16,16 +16,17 @@ test 'pricing tests' => sub {
     my $rset_role = $schema->resultset('Role');
 
     # fixtures
-    $self->products;
-    $self->price_modifiers;
+    $self->products unless $self->has_products;
+    $self->navigation unless $self->has_navigation;
+    $self->price_modifiers unless $self->has_price_modifiers;
 
-    my ( $role_multi, $product );
+    my ( $role_multi, $product, $nav, $products, @products );
 
     cmp_ok( $rset_role->find({ name => 'trade' })->label,
-        'eq', 'Trade customer', "Trade customer exists" );
+        'eq', 'Trade customer', "Trade customer role exists" );
 
-    cmp_ok( $rset_role->find({ name => 'anonymous' })->label,
-        'eq', 'Anonymous', "Anonamous customer exists" );
+    cmp_ok( $rset_role->find({ name => 'user' })->label,
+        'eq', 'User', "User role exists" );
 
     lives_ok( sub { $product = $self->products->find('os28005') },
         "Find product os28005" );
@@ -53,23 +54,23 @@ test 'pricing tests' => sub {
         '==', 7.50, "selling_price is 7.50" );
 
     cmp_ok( sprintf( "%.02f", $product->selling_price( { quantity => 1 } ) ),
-        '==', 7.50, "anonymous qty 1 selling_price is 7.50" );
+        '==', 7.50, "undef role qty 1 selling_price is 7.50" );
 
     cmp_ok( sprintf ( "%.2f", $product->selling_price( { quantity => 15 } ) ),
-        '==', 7.50, "anonymous qty 15 selling_price is 7.50" );
+        '==', 7.50, "undef role qty 15 selling_price is 7.50" );
 
     cmp_ok( sprintf( "%.2f", $product->selling_price( { quantity => 30 } ) ),
-        '==', 7.50, "anonymous qty 30 selling_price is 7.50" );
+        '==', 7.50, "undef role qty 30 selling_price is 7.50" );
 
     cmp_ok(
         sprintf(
             "%.02f",
             $product->selling_price(
-                { quantity => 1, roles => [qw/authenticated/] }
+                { quantity => 1, roles => [qw/user/] }
             )
         ),
         '==', 7.50,
-        "authenticated qty 1 selling_price is 7.50"
+        "user qty 1 selling_price is 7.50"
     );
 
     cmp_ok(
@@ -104,39 +105,39 @@ test 'pricing tests' => sub {
         '==', 8.99, "selling_price is 8.99" );
 
     cmp_ok( sprintf( "%.02f", $product->selling_price( { quantity => 1 } ) ),
-        '==', 8.99, "anonymous qty 1 selling_price is 8.99" );
+        '==', 8.99, "undef role qty 1 selling_price is 8.99" );
 
     cmp_ok( sprintf( "%.2f", $product->selling_price( { quantity => 15 } ) ),
-        '==', 8.49, "anonymous qty 15 selling_price is 8.49" );
+        '==', 8.49, "undef role qty 15 selling_price is 8.49" );
 
     cmp_ok( sprintf( "%.2f", $product->selling_price( { quantity => 30 } ) ),
-        '==', 8.49, "anonymous qty 30 selling_price is 8.49" );
+        '==', 8.49, "undef role qty 30 selling_price is 8.49" );
 
     cmp_ok(
         sprintf(
             "%.02f",
             $product->selling_price(
-                { quantity => 1, roles => [qw/authenticated/] }
+                { quantity => 1, roles => [qw/user/] }
             )
         ),
         '==', 8.99,
-        "authenticated qty 1 selling_price is 8.99"
+        "user qty 1 selling_price is 8.99"
     );
 
     cmp_ok(
         sprintf( "%.2f", $product->selling_price(
-            { quantity => 15, roles => [qw/authenticated/] }
+            { quantity => 15, roles => [qw/user/] }
         )),
         '==', 8.20,
-        "authenticated qty 15 selling_price is 8.20"
+        "user qty 15 selling_price is 8.20"
     );
 
     cmp_ok(
         sprintf( "%.2f", $product->selling_price(
-            { quantity => 25, roles => [qw/authenticated/] }
+            { quantity => 25, roles => [qw/user/] }
         )),
         '==', 8.00,
-        "authenticated qty 25 selling_price is 8.00"
+        "user qty 25 selling_price is 8.00"
     );
 
     # stop mocking time
@@ -166,38 +167,38 @@ test 'pricing tests' => sub {
 
     cmp_ok(
         $product->selling_price(
-            { quantity => 1, roles => [qw/authenticated trade/] }
+            { quantity => 1, roles => [qw/user trade/] }
         ),
         '==', 8,
-        "authenticated & trade qty 1 selling_price is 8"
+        "user & trade qty 1 selling_price is 8"
     );
     cmp_ok(
         $product->selling_price(
-            { quantity => 2, roles => [qw/authenticated trade/] }
+            { quantity => 2, roles => [qw/user trade/] }
         ),
         '==', 8,
-        "authenticated & trade qty 2 selling_price is 8"
+        "user & trade qty 2 selling_price is 8"
     );
     cmp_ok(
         sprintf( "%.2f", $product->selling_price(
-            { quantity => 15, roles => [qw/authenticated trade/] }
+            { quantity => 15, roles => [qw/user trade/] }
         )),
         '==', 7.80,
-        "authenticated & trade qty 15 selling_price is 7.80"
+        "user & trade qty 15 selling_price is 7.80"
     );
     cmp_ok(
         sprintf( "%.2f", $product->selling_price(
-            { quantity => 30, roles => [qw/authenticated trade/] }
+            { quantity => 30, roles => [qw/user trade/] }
         )),
         '==', 7.50,
-        "authenticated & trade qty 30 selling_price is 7.50"
+        "user & trade qty 30 selling_price is 7.50"
     );
     cmp_ok(
         $product->selling_price(
-            { quantity => 50, roles => [qw/authenticated trade/] }
+            { quantity => 50, roles => [qw/user trade/] }
         ),
         '==', 7,
-        "authenticated & trade qty 50 selling_price is 7"
+        "user & trade qty 50 selling_price is 7"
     );
 
     cmp_ok(
@@ -236,8 +237,228 @@ test 'pricing tests' => sub {
         "wholesale & trade qty 50 selling_price is 6.50"
     );
 
+    # NavigationProduct->product_with_selling_price
+
+    lives_ok(
+        sub {
+            $nav =
+              $schema->resultset('Navigation')->find(
+                { uri => 'painting-supplies/paintbrushes' } );
+        },
+        "find paintbrushes in navigation"
+    );
+
+    cmp_ok( $nav->name, 'eq', "Paintbrushes", "nav has name Paintbrushes" );
+
+    # no args to product_with_selling_price
+
+    lives_ok(
+        sub {
+            $products =
+              $nav->navigation_products->search_related('product')->active;
+        },
+        "find all active paintbrush products"
+    );
+
+    cmp_ok( $products->count, "==", 3, "we have 3 products" );
+
+    lives_ok(
+        sub {
+            @products = $products->listing->search( undef,
+                { order_by => { -desc => 'product.sku' } } )->all;
+        },
+        "get product listing order by sku desc"
+    );
+
+    my $expected = [
+        {
+            discount_percent  => undef,
+            inventory         => undef,
+            name              => "Disposable Brush Set",
+            price             => 14.99,
+            selling_price     => undef,
+            short_description => "Disposable Brush Set",
+            sku               => "os28007",
+            uri               => "disposable-brush-set"
+        },
+        {
+            discount_percent  => 16,
+            inventory         => undef,
+            name              => "Painters Brush Set",
+            price             => 29.99,
+            selling_price     => 24.99,
+            short_description => "Painters Brush Set",
+            sku               => "os28006",
+            uri               => "painters-brush-set"
+        },
+        {
+            discount_percent  => undef,
+            inventory         => undef,
+            name              => "Trim Brush",
+            price             => 8.99,
+            selling_price     => undef,
+            short_description => "Trim Brush",
+            sku               => "os28005",
+            uri               => "trim-brush"
+        }
+    ];
+
+    cmp_deeply( \@products, $expected, "do we have expected products?" );
+
+    lives_ok(
+        sub {
+            @products = $products->listing->search(
+                undef,
+                {
+                    order_by => { -desc => 'product.sku' },
+                    rows     => 2,
+                    page     => 1
+                }
+            )->all;
+        },
+        "get product listing order by sku desc with 2 rows and page 1"
+    );
+
+    $expected = [
+        {
+            discount_percent  => undef,
+            inventory         => undef,
+            name              => "Disposable Brush Set",
+            price             => 14.99,
+            selling_price     => undef,
+            short_description => "Disposable Brush Set",
+            sku               => "os28007",
+            uri               => "disposable-brush-set"
+        },
+        {
+            discount_percent  => 16,
+            inventory         => undef,
+            name              => "Painters Brush Set",
+            price             => 29.99,
+            selling_price     => 24.99,
+            short_description => "Painters Brush Set",
+            sku               => "os28006",
+            uri               => "painters-brush-set"
+        },
+    ];
+
+    cmp_deeply( \@products, $expected, "do we have expected products?" );
+
+    lives_ok(
+        sub {
+            @products = $products->listing->search(
+                undef,
+                {
+                    order_by => { -desc => 'product.sku' },
+                    rows     => 2,
+                    page     => 2
+                }
+            )->all;
+        },
+        "get product listing order by sku desc with 2 rows and page 2"
+    );
+
+    $expected = [
+        {
+            discount_percent  => undef,
+            inventory         => undef,
+            name              => "Trim Brush",
+            price             => 8.99,
+            selling_price     => undef,
+            short_description => "Trim Brush",
+            sku               => "os28005",
+            uri               => "trim-brush"
+        }
+    ];
+
+    cmp_deeply( \@products, $expected, "do we have expected products?" );
+
+    # quantity 10
+
+    lives_ok(
+        sub {
+            @products = $products->listing({ quantity => 10 })->search( undef,
+                { order_by => { -desc => 'product.sku' } } )->all;
+        },
+        "get product listing { quantity => 10} order by sku desc"
+    );
+
+    $expected = [
+        {
+            discount_percent  => undef,
+            inventory         => undef,
+            name              => "Disposable Brush Set",
+            price             => 14.99,
+            selling_price     => undef,
+            short_description => "Disposable Brush Set",
+            sku               => "os28007",
+            uri               => "disposable-brush-set"
+        },
+        {
+            discount_percent  => 16,
+            inventory         => undef,
+            name              => "Painters Brush Set",
+            price             => 29.99,
+            selling_price     => 24.99,
+            short_description => "Painters Brush Set",
+            sku               => "os28006",
+            uri               => "painters-brush-set"
+        },
+        {
+            discount_percent  => 5,
+            inventory         => undef,
+            name              => "Trim Brush",
+            price             => 8.99,
+            selling_price     => 8.49,
+            short_description => "Trim Brush",
+            sku               => "os28005",
+            uri               => "trim-brush"
+        }
+    ];
+
+    cmp_deeply( \@products, $expected, "do we have expected products?" );
+
+    # user customer1
+
+    my $users_id = $self->users->find({ username => 'customer1' })->id;
+
+    lives_ok(
+        sub {
+            @products =
+              $products->listing( { users_id => $users_id } )
+              ->search( undef, { order_by => { -desc => 'product.sku' } } )
+              ->all;
+        },
+        "get product listing { users_id => (id of customer1) }"
+    );
+
+    $expected->[2]->{discount_percent} = undef;
+    $expected->[2]->{selling_price} = undef;
+
+    cmp_deeply( \@products, $expected, "do we have expected products?" );
+
+    # user customer1 & quantity = 10
+
+    lives_ok(
+        sub {
+            @products =
+              $products->listing( { users_id => $users_id, quantity => 10 } )
+              ->search( undef, { order_by => { -desc => 'product.sku' } } )
+              ->all;
+        },
+        "get product listing { users_id => (id of customer1), quantity => 10 }"
+    );
+
+    # we might get this with or without trailing zero depending on
+    # database engine we're testing against
+    $expected->[2]->{selling_price} = any(qw/8.20 8.2/);
+    $expected->[2]->{discount_percent} = 8;
+
+    cmp_deeply( \@products, $expected, "do we have expected products?" );
+
     # TODO: add tier pricing tests
-    $product->tier_pricing([qw/anonymous authenticated trade wholesale/]);
+    #$product->tier_pricing([qw/user trade wholesale/]);
+
     # cleanup
     $rset_pm->delete_all;
     $self->clear_roles;

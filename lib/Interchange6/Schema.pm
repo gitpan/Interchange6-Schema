@@ -10,16 +10,26 @@ Interchange6::Schema - Database Schema for Interchange 6
 
 =head1 VERSION
 
-0.060
+0.060_91
 
 =cut
 
-our $VERSION = '0.060';
+our $VERSION = '0.060_91';
 
 =head1 DESCRIPTION
 
 Database schema classes for Interchange6 Open Source eCommerce
 software.
+
+Components used:
+
+=over
+
+=item * L<DBIx::Class::Helper::Schema::DateTime>
+
+=item * L<DBIx::Class::Helper::Schema::QuoteNames>
+
+=back
 
 =cut
 
@@ -28,7 +38,12 @@ use warnings;
 
 use base 'DBIx::Class::Schema';
 
-__PACKAGE__->load_namespaces;
+__PACKAGE__->load_components( 'Helper::Schema::DateTime',
+    'Helper::Schema::QuoteNames' );
+
+__PACKAGE__->load_namespaces(
+    default_resultset_class => 'ResultSet',
+);
 
 =head1 MANUAL
 

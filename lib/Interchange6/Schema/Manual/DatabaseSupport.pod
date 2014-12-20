@@ -7,15 +7,19 @@ Interchange6::Schema::Manual::DatabaseSupport - Details of database engine suppo
 MySQL databases should be created with UTF8 encoding and appropriate collation for your local, for example:
 
     CREATE DATABASE "my_shop_db"
-        ENCODING 'UTF8'
-        LC_COLLATE = 'en_US.UTF-8'
-        LC_CTYPE = 'en_US.UTF-8';
+        DEFAULT CHARACTER SET utf8
+        DEFAULT COLLATE utf8_general_ci;
 
 The following L<Connection attributes|DBIx::Class::Storage::DBI/DBIx::Class specific connection attributes> are recommended as a minimum for MySQL:
 
     mysql_enable_utf8 => 1,
     on_connect_call   => 'set_strict_mode',
-    quote_names       => 1,
+    on_connect_do     => [
+        q|SET SQL_MODE = CONCAT('ANSI,TRADITIONAL', @@sql_mode)|,
+        q|SET SQL_AUTO_IS_NULL = 0|,
+    ],
+
+NOTE: we no longer recommend the use of C<< on_connect_call   => 'set_strict_mode' >> since that also forces MySQL's L<ONLY_FULL_GROUP_BY|https://dev.mysql.com/doc/refman/5.0/en/sql-mode.html#sqlmode_only_full_group_by> mode which breaks compatibility with PostgreSQL.
 
 =head1 PostgreSQL
 
@@ -27,7 +31,6 @@ The following L<Connection attributes|DBIx::Class::Storage::DBI/DBIx::Class spec
 
     on_connect_do  => 'SET client_min_messages=WARNING;',
     pg_enable_utf8 => 1,
-    quote_names    => 1,
 
 =head1 SQLite
 
@@ -36,7 +39,6 @@ Although we support SQLite in as much that all tests are run against it we do no
 The following L<Connection attributes|DBIx::Class::Storage::DBI/DBIx::Class specific connection attributes> are recommended as a minimum for SQLite:
 
     on_connect_call => 'use_foreign_keys',
-    quote_names     => 1,
     sqlite_unicode  => 1,
 
 In addition the following attribute can be useful for test use only for greatly improved performance:
