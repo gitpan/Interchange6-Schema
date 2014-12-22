@@ -35,6 +35,7 @@
       },
       "configure" : {
          "requires" : {
+            "DBIx::Class" : "0",
             "ExtUtils::MakeMaker" : "0"
          }
       },
@@ -45,7 +46,7 @@
             "DBIx::Class" : "0",
             "DBIx::Class::Candy" : "0.002104",
             "DBIx::Class::EncodedColumn" : "0",
-            "DBIx::Class::Helpers" : "0",
+            "DBIx::Class::Helpers" : "2.019",
             "DBIx::Class::InflateColumn::DateTime" : "0",
             "DBIx::Class::TimeStamp" : "0",
             "DBIx::Class::Tree" : "0",
@@ -53,7 +54,7 @@
             "Locale::SubCountry" : "1.62",
             "MooX::HandlesVia" : "0.001005",
             "MooX::Types::MooseLike" : "0.25",
-            "SQL::Translator" : "0.11016",
+            "SQL::Translator" : "0.11018",
             "Sub::Quote" : "1.004006",
             "Test::Roo" : "1.003",
             "Time::Duration::Parse" : "0",
@@ -72,5 +73,5 @@
       },
       "x_IRC" : "irc://irc.freenode.net/#interchange"
    },
-   "version" : "0.060_91"
+   "version" : "0.060_92"
 }
