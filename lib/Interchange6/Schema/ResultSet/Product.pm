@@ -31,7 +31,7 @@ Returns all rows where L<Interchange6::Schema::Result::Product/active> is true.
 =cut
 
 sub active {
-    return shift->search({ active => 1 });
+    return $_[0]->search({ $_[0]->me.'active' => 1 });
 }
 
 =head2 listing
@@ -112,7 +112,8 @@ sub listing {
             ],
             '+columns' => [
                 { selling_price => \ "COALESCE(
-                    MIN( current_price_modifiers.price ), product.price )"
+                    MIN( current_price_modifiers.price ), product.price )
+                    AS selling_price"
                 },
                 { inventory => 'inventory.quantity' },
                 { discount_percent => \ "ROUND (
