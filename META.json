@@ -63,7 +63,7 @@
          }
       }
    },
-   "release_status" : "testing",
+   "release_status" : "stable",
    "resources" : {
       "bugtracker" : {
          "web" : "https://github.com/interchange/interchange6-schema/issues"
@@ -73,5 +73,5 @@
       },
       "x_IRC" : "irc://irc.freenode.net/#interchange"
    },
-   "version" : "0.060_93"
+   "version" : "0.070"
 }
